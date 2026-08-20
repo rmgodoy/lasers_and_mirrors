@@ -40,7 +40,7 @@ export function traceAllBeams(maxBounces) {
   const lasers = getAllLasers();
   const results = [];
   for (const laserToken of lasers) {
-    const laserData = getLaserData(laserToken.document);
+    const laserData = getLaserData(laserToken.document ?? laserToken);
     if (!laserData.visible) continue;
     const result = traceSingleBeam(laserToken, laserData, maxBounces);
     results.push(result);
@@ -51,14 +51,14 @@ export function traceAllBeams(maxBounces) {
 /**
  * Trace a single laser beam. Handles bouncing off mirrors, stopping at walls,
  * and detecting trigger intersections.
- * @param {Token} laserToken
+ * @param {Token|TokenDocument} laserToken
  * @param {object} laserData - laser flags data
  * @param {number} maxBounces
  * @returns {BeamTraceResult}
  */
 function traceSingleBeam(laserToken, laserData, maxBounces) {
   let origin = getTokenCenter(laserToken);
-  let direction = getTokenFacingVector(laserToken.document);
+  let direction = getTokenFacingVector(laserToken.document ?? laserToken);
   const gridSize = canvas?.grid?.size ?? 100;
   let remainingRange = laserData.range * gridSize;
   const color = laserData.color;
@@ -76,8 +76,9 @@ function traceSingleBeam(laserToken, laserData, maxBounces) {
     width,
     intensity,
     laserTokenId: laserToken.id,
-    laserActorId: laserToken.actor?.id,
+    laserActorId: (laserToken.actor ?? laserToken.document?.actor)?.id,
   };
+
 
   while (remainingRange > 0 && bounces <= maxBounces) {
     const rayEnd = {
@@ -245,7 +246,7 @@ function getMirrorIntersections(origin, rayEnd, excludeLaserToken, lastMirrorId)
     if (excludeLaserToken && mirrorToken.id === excludeLaserToken.id) continue;
     if (lastMirrorId && mirrorToken.id === lastMirrorId) continue;
 
-    const mirrorData = getMirrorData(mirrorToken.document);
+    const mirrorData = getMirrorData(mirrorToken.document ?? mirrorToken);
     const center = getTokenCenter(mirrorToken);
     const halfWidth = (mirrorData.width * gridSize) / 2;
     const segment = getLineSegmentFromAngle(center, mirrorData.orientation, halfWidth);
@@ -284,7 +285,7 @@ function getTriggerIntersections(origin, rayEnd, gridSize) {
   const threshold = gridSize / 2;
 
   for (const triggerToken of triggers) {
-    const triggerData = getTriggerData(triggerToken.document);
+    const triggerData = getTriggerData(triggerToken.document ?? triggerToken);
     if (!triggerData.enabled) continue;
 
     const center = getTokenCenter(triggerToken);

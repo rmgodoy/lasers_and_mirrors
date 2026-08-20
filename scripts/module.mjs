@@ -80,5 +80,15 @@ Hooks.once("ready", async () => {
 Hooks.on("canvasReady", async () => {
   console.log(`${MODULE_ID} | Canvas ready, initializing beam layer`);
   await initBeamLayer();
+
+  // Unhide any laser tokens that were erroneously created with hidden: true
+  if (game.user.isGM && canvas.scene) {
+    for (const tokenDoc of canvas.scene.tokens) {
+      if (tokenDoc.actor?.type === ACTOR_TYPES.LASER && tokenDoc.hidden) {
+        await tokenDoc.update({ hidden: false });
+      }
+    }
+  }
 });
+
 

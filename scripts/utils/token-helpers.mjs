@@ -1,22 +1,25 @@
 import { MODULE_ID, TYPES, FLAGS } from "../constants.mjs";
+import { isLaser } from "../laser-data.mjs";
+import { isMirror } from "../mirror-data.mjs";
+import { isTrigger } from "../trigger-data.mjs";
 
 /**
  * Get the module type of a token ("laser", "mirror", "trigger", or null).
- * @param {TokenDocument} tokenDoc
+ * @param {TokenDocument|Token} tokenDoc
  * @returns {string|null}
  */
 export function getTokenType(tokenDoc) {
-  return tokenDoc?.getFlag(MODULE_ID, FLAGS.TYPE) ?? null;
+  const doc = tokenDoc?.document ?? tokenDoc;
+  return doc?.getFlag?.(MODULE_ID, FLAGS.TYPE) ?? doc?.flags?.[MODULE_ID]?.type ?? null;
 }
 
 /**
  * Check if a token is a module-managed token (laser, mirror, or trigger).
- * @param {TokenDocument} tokenDoc
+ * @param {TokenDocument|Token} tokenDoc
  * @returns {boolean}
  */
 export function isModuleToken(tokenDoc) {
-  const type = getTokenType(tokenDoc);
-  return type === TYPES.LASER || type === TYPES.MIRROR || type === TYPES.TRIGGER;
+  return isLaser(tokenDoc) || isMirror(tokenDoc) || isTrigger(tokenDoc);
 }
 
 /**
@@ -28,9 +31,11 @@ export function isModuleToken(tokenDoc) {
  */
 export function areTokensAdjacent(tokenA, tokenB) {
   if (!tokenA || !tokenB) return false;
+  const centerA = getTokenCenter(tokenA);
+  const centerB = getTokenCenter(tokenB);
   const waypoints = [
-    { x: tokenA.center.x, y: tokenA.center.y },
-    { x: tokenB.center.x, y: tokenB.center.y }
+    { x: centerA.x, y: centerA.y },
+    { x: centerB.x, y: centerB.y }
   ];
   const result = canvas.grid.measurePath(waypoints);
   return result.distance <= canvas.grid.distance;
@@ -55,11 +60,12 @@ export function getPlayerToken() {
  * Get the facing direction of a token as a normalized {x, y} vector.
  * Foundry rotation: 0° = south, 90° = west, etc. (clockwise from south).
  * Convert to standard math angle: 0° = east, counter-clockwise.
- * @param {TokenDocument} tokenDoc
+ * @param {TokenDocument|Token} tokenDoc
  * @returns {{ x: number, y: number }}
  */
 export function getTokenFacingVector(tokenDoc) {
-  const rotDeg = tokenDoc?.rotation ?? 0;
+  const doc = tokenDoc?.document ?? tokenDoc;
+  const rotDeg = doc?.rotation ?? 0;
   const mathRad = ((180 - rotDeg) * Math.PI) / 180;
   return {
     x: Math.cos(mathRad),
@@ -69,9 +75,19 @@ export function getTokenFacingVector(tokenDoc) {
 
 /**
  * Get the center point of a token in canvas coordinates.
- * @param {Token} token - Token placeable (not document)
+ * Handles both Token placeable and TokenDocument.
+ * @param {Token|TokenDocument} token
  * @returns {{ x: number, y: number }}
  */
 export function getTokenCenter(token) {
-  return { x: token.center.x, y: token.center.y };
+  if (token?.center) return { x: token.center.x, y: token.center.y };
+  const doc = token?.document ?? token;
+  if (doc) {
+    const gridSize = canvas?.grid?.size ?? 100;
+    const width = (doc.width ?? 1) * gridSize;
+    const height = (doc.height ?? 1) * gridSize;
+    return { x: (doc.x ?? 0) + width / 2, y: (doc.y ?? 0) + height / 2 };
+  }
+  return { x: 0, y: 0 };
 }
+

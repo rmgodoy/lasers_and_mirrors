@@ -7,6 +7,7 @@ import { LaserTokenConfigSheet } from "../apps/laser-sheet.mjs";
 import { MirrorTokenConfigSheet } from "../apps/mirror-sheet.mjs";
 import { TriggerTokenConfigSheet } from "../apps/trigger-sheet.mjs";
 import { attachLaser, detachLaser, isLaserAttachedTo } from "./attachment.mjs";
+import { emitToggleLaser, emitAttachLaser, emitDetachLaser } from "./socket-handler.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 /**
@@ -75,9 +76,13 @@ function onRenderTokenHUD(hud, html, data) {
               ui.notifications.warn(game.i18n.localize("LAM.notify.notAdjacent"));
               return;
             }
-            const current = getLaserData(tokenDoc).visible;
-            await updateLaserData(tokenDoc, { visible: !current });
-            refreshBeams();
+            const nextVisible = !laserData.visible;
+            if (game.user.isGM) {
+              await updateLaserData(tokenDoc, { visible: nextVisible });
+              refreshBeams();
+            } else {
+              emitToggleLaser(tokenDoc.parent.id, tokenDoc.id, nextVisible);
+            }
             ui.notifications.info(game.i18n.localize("LAM.notify.laserToggled"));
             hud.render();
           }
@@ -100,8 +105,12 @@ function onRenderTokenHUD(hud, html, data) {
             game.i18n.localize("LAM.hud.detachLaser"),
             async (ev) => {
               ev.stopPropagation();
-              await detachLaser(tokenDoc);
-              refreshBeams();
+              if (game.user.isGM) {
+                await detachLaser(tokenDoc);
+                refreshBeams();
+              } else {
+                emitDetachLaser(tokenDoc.parent.id, tokenDoc.id);
+              }
               hud.render();
             }
           );
@@ -117,8 +126,12 @@ function onRenderTokenHUD(hud, html, data) {
                 ui.notifications.warn(game.i18n.localize("LAM.notify.notAdjacent"));
                 return;
               }
-              await attachLaser(tokenDoc, pToken.document);
-              refreshBeams();
+              if (game.user.isGM) {
+                await attachLaser(tokenDoc, pToken.document);
+                refreshBeams();
+              } else {
+                emitAttachLaser(tokenDoc.parent.id, tokenDoc.id, pToken.document.id);
+              }
               hud.render();
             }
           );
@@ -154,4 +167,5 @@ function onRenderTokenHUD(hud, html, data) {
     }
   }
 }
+
 

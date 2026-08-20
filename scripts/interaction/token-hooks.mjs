@@ -58,7 +58,7 @@ function onPreCreateToken(tokenDoc, data, options, userId) {
     };
     const update = {
       [`flags.${MODULE_ID}`]: flags,
-      hidden: true,
+      hidden: false,
     };
     if (!data.texture?.src || data.texture.src === "icons/svg/mystery-man.svg") {
       update["texture.src"] = actor.img && actor.img !== "icons/svg/mystery-man.svg" ? actor.img : defaultImg;
@@ -147,23 +147,17 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
     }
   }
 
-  // If flags changed on a module token → refresh beams
-  if (changes.flags?.[MODULE_ID]) {
-    refreshBeams();
-    return;
-  }
-
-  // If position or rotation changed → refresh beams + sync attachments
-  const posChanged = ("x" in changes) || ("y" in changes) || ("rotation" in changes);
-  if (!posChanged) return;
-
   // If a non-laser token moved, sync any attached lasers
-  if (!isLaser(tokenDoc)) {
+  const posChanged = ("x" in changes) || ("y" in changes) || ("rotation" in changes);
+  if (posChanged && !isLaser(tokenDoc)) {
     await syncAttachedLasers(tokenDoc, changes);
   }
 
-  // Always refresh beams when any position changes
-  refreshBeams();
+  // Refresh beams if flags changed, position/rotation changed, or if it's any module token
+  const hasModuleFlagChange = Boolean(changes.flags?.[MODULE_ID]);
+  if (hasModuleFlagChange || posChanged || isModuleToken(tokenDoc)) {
+    refreshBeams();
+  }
 }
 
 /**
@@ -200,4 +194,5 @@ function onControlToken(token, controlled) {
   if (controlled && isMirror(token.document)) return false;
   return true;
 }
+
 

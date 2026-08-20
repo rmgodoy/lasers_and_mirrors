@@ -1,5 +1,5 @@
-import { MODULE_ID } from "../constants.mjs";
-import { updateMirrorData } from "../mirror-data.mjs";
+import { MODULE_ID, MIRROR_DEFAULTS } from "../constants.mjs";
+import { getMirrorData, updateMirrorData } from "../mirror-data.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
@@ -7,7 +7,7 @@ const { ActorSheetV2 } = foundry.applications.sheets;
 
 /**
  * Actor sheet for Mirror actors (opened from Actors sidebar or token double-click).
- * Reads/writes from actor.system (the TypeDataModel).
+ * Reads/writes from actor.system (the TypeDataModel) and syncs to canvas tokens.
  */
 export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
@@ -38,11 +38,12 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const sys = this.document.system;
+    const tokenDoc = this.document.token;
+    const data = tokenDoc ? getMirrorData(tokenDoc) : (this.document.system ?? {});
     context.isGM = game.user.isGM;
-    context.color = sys.color;
-    context.width = sys.width;
-    context.orientation = sys.orientation ?? 0;
+    context.color = data.color ?? MIRROR_DEFAULTS.color;
+    context.width = data.width ?? MIRROR_DEFAULTS.width;
+    context.orientation = data.orientation ?? MIRROR_DEFAULTS.orientation;
     return context;
   }
 
@@ -62,7 +63,7 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
-   * Handle form submission — save data to actor.system and active token.
+   * Handle form submission — save data to actor.system and active token(s).
    */
   static async onSubmit(event, form, formData) {
     const data = formData.object;
@@ -79,8 +80,16 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     if (tokenDoc) {
       await updateMirrorData(tokenDoc, data);
+    } else {
+      const sceneTokens = canvas.scene?.tokens?.filter(t => t.actorId === this.document.id);
+      if (sceneTokens) {
+        for (const tDoc of sceneTokens) {
+          await updateMirrorData(tDoc, data);
+        }
+      }
     }
 
     refreshBeams();
   }
 }
+

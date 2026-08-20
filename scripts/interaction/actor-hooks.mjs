@@ -1,13 +1,50 @@
 import { MODULE_ID, ACTOR_TYPES, LASER_DEFAULTS, MIRROR_DEFAULTS, TRIGGER_DEFAULTS } from "../constants.mjs";
+import { updateLaserData } from "../laser-data.mjs";
+import { updateMirrorData } from "../mirror-data.mjs";
+import { updateTriggerData } from "../trigger-data.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 /**
- * Register canvas-related Actor hooks: scene control buttons and actor pre-creation.
+ * Register canvas-related Actor hooks: scene control buttons, actor pre-creation, and actor updates.
  * Call once during module init.
  */
 export function registerActorHooks() {
   Hooks.on("getSceneControlButtons", onGetSceneControlButtons);
   Hooks.on("preCreateActor", onPreCreateActor);
+  Hooks.on("updateActor", onUpdateActor);
+}
+
+/**
+ * Hook handler for Actor document updates.
+ * Keeps canvas tokens and beam rendering synchronized when an Actor is updated.
+ * @param {Actor} actor
+ * @param {object} changes
+ * @param {object} options
+ * @param {string} userId
+ */
+async function onUpdateActor(actor, changes, options, userId) {
+  if (!actor) return;
+  const isModuleActor = actor.type === ACTOR_TYPES.LASER ||
+                        actor.type === ACTOR_TYPES.MIRROR ||
+                        actor.type === ACTOR_TYPES.TRIGGER;
+  if (!isModuleActor) return;
+
+  if (game.user.isGM && changes.system) {
+    const sceneTokens = canvas.scene?.tokens?.filter(t => t.actorId === actor.id || t.actor?.id === actor.id);
+    if (sceneTokens) {
+      for (const tokenDoc of sceneTokens) {
+        if (actor.type === ACTOR_TYPES.LASER) {
+          await updateLaserData(tokenDoc, changes.system);
+        } else if (actor.type === ACTOR_TYPES.MIRROR) {
+          await updateMirrorData(tokenDoc, changes.system);
+        } else if (actor.type === ACTOR_TYPES.TRIGGER) {
+          await updateTriggerData(tokenDoc, changes.system);
+        }
+      }
+    }
+  }
+
+  refreshBeams();
 }
 
 /**
@@ -24,7 +61,7 @@ function onPreCreateActor(actor, data, options, userId) {
       width: 1,
       height: 1,
       actorLink: false,
-      hidden: true,
+      hidden: false,
       flags: {
         [MODULE_ID]: { ...LASER_DEFAULTS, ...sysData }
       }
@@ -120,7 +157,7 @@ function onGetSceneControlButtons(controls) {
         y: point.y,
         width: 1,
         height: 1,
-        hidden: true,
+        hidden: false,
         [`flags.${MODULE_ID}`]: { ...LASER_DEFAULTS, ...(laserActor.system ?? {}) },
       }, { parent: canvas.scene });
       refreshBeams();
@@ -196,4 +233,5 @@ function onGetSceneControlButtons(controls) {
     },
   });
 }
+
 
