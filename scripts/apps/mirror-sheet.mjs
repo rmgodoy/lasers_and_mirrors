@@ -30,7 +30,8 @@ export class MirrorTokenConfigSheet extends HandlebarsApplicationMixin(Applicati
     position: { width: 380, height: "auto" },
     form: {
       handler: MirrorTokenConfigSheet.onSubmit,
-      closeOnSubmit: true,
+      closeOnSubmit: false,
+      submitOnChange: true,
     },
   };
 
@@ -76,6 +77,9 @@ export class MirrorTokenConfigSheet extends HandlebarsApplicationMixin(Applicati
     data.width = Number(data.width);
     data.orientation = Number(data.orientation);
     await updateMirrorData(this.tokenDoc, data);
+    if (this.tokenDoc.rotation !== data.orientation) {
+      await this.tokenDoc.update({ rotation: data.orientation });
+    }
     refreshBeams();
   }
 }

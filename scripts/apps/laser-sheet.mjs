@@ -30,7 +30,8 @@ export class LaserTokenConfigSheet extends HandlebarsApplicationMixin(Applicatio
     position: { width: 380, height: "auto" },
     form: {
       handler: LaserTokenConfigSheet.onSubmit,
-      closeOnSubmit: true,
+      closeOnSubmit: false,
+      submitOnChange: true,
     },
   };
 

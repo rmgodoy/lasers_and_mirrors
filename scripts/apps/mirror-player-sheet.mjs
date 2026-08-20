@@ -66,7 +66,11 @@ export class MirrorPlayerSheet extends HandlebarsApplicationMixin(ApplicationV2)
    */
   static async onSubmit(event, form, formData) {
     const { orientation } = formData.object;
-    await updateMirrorData(this.tokenDoc, { orientation: Number(orientation) });
+    const newOrientation = Number(orientation);
+    await updateMirrorData(this.tokenDoc, { orientation: newOrientation });
+    if (this.tokenDoc.rotation !== newOrientation) {
+      await this.tokenDoc.update({ rotation: newOrientation });
+    }
     refreshBeams();
   }
 }

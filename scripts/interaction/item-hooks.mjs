@@ -52,6 +52,7 @@ async function onDropCanvasData(_canvas, data) {
     y: center.y - canvas.grid.size / 2,
     width: 1,
     height: 1,
+    rotation: isMirrorItem ? (flagData.orientation ?? 0) : 0,
     [`flags.${MODULE_ID}`]: flagData,
   };
 
@@ -113,6 +114,7 @@ function onGetSceneControlButtons(controls) {
         y: point.y,
         width: 1,
         height: 1,
+        rotation: MIRROR_DEFAULTS.orientation,
         [`flags.${MODULE_ID}`]: { ...MIRROR_DEFAULTS },
       }, { parent: canvas.scene });
       refreshBeams();

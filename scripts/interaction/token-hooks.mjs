@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../constants.mjs";
 import { isLaser } from "../laser-data.mjs";
+import { isMirror, getMirrorData, updateMirrorData } from "../mirror-data.mjs";
 import { isModuleToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 import { syncAttachedLasers, handleTokenDeletion } from "./attachment.mjs";
@@ -22,6 +23,17 @@ export function registerTokenHooks() {
  * @param {string} userId
  */
 async function onUpdateToken(tokenDoc, changes, options, userId) {
+  // If a mirror was rotated directly (e.g. via UI), sync its orientation flag
+  if (isMirror(tokenDoc) && "rotation" in changes) {
+    const currentData = getMirrorData(tokenDoc);
+    if (currentData.orientation !== changes.rotation) {
+      // Don't trigger an infinite loop if the change was initiated by our own scripts
+      // updateMirrorData will trigger another updateToken, but it will have flags
+      await updateMirrorData(tokenDoc, { orientation: changes.rotation });
+      return; // The next updateToken event will refresh beams
+    }
+  }
+
   // If flags changed on a module token → refresh beams
   if (changes.flags?.[MODULE_ID]) {
     refreshBeams();
