@@ -214,24 +214,29 @@ export function wallBlocksLaser(wall, origin) {
 
   // 1. Open doors do not block lasers
   if (wall.isOpen || doc.isOpen) return false;
-  const isDoor = (doc.door ?? 0) > (CONST.WALL_DOOR_TYPES?.NONE ?? 0);
-  if (isDoor && doc.ds === (CONST.WALL_DOOR_STATES?.OPEN ?? 1)) return false;
+  const doorTypes = CONST.EDGE_DOOR_TYPES ?? CONST.WALL_DOOR_TYPES;
+  const doorStates = CONST.EDGE_DOOR_STATES ?? CONST.WALL_DOOR_STATES;
+  const isDoor = (doc.door ?? 0) > (doorTypes?.NONE ?? 0);
+  if (isDoor && doc.ds === (doorStates?.OPEN ?? 1)) return false;
 
   // 2. Walls that do not restrict light (e.g. ethereal / invisible walls) do not block lasers
-  const lightSense = doc.light ?? (CONST.WALL_SENSE_TYPES?.NORMAL ?? 1);
-  if (lightSense === (CONST.WALL_SENSE_TYPES?.NONE ?? 0)) return false;
+  const senseTypes = CONST.EDGE_SENSE_TYPES ?? CONST.WALL_SENSE_TYPES;
+  const lightSense = doc.light ?? (senseTypes?.NORMAL ?? 1);
+  if (lightSense === (senseTypes?.NONE ?? 0)) return false;
 
   // 3. Directional walls (one-way walls)
-  const dir = doc.dir ?? (CONST.WALL_DIRECTIONS?.BOTH ?? 0);
-  if (dir !== (CONST.WALL_DIRECTIONS?.BOTH ?? 0) && origin) {
+  const directions = CONST.EDGE_DIRECTIONS ?? CONST.WALL_DIRECTIONS;
+  const bothDir = directions?.BOTH ?? 0;
+  const dir = doc.dir ?? bothDir;
+  if (dir !== bothDir && origin) {
     const c = doc.c;
     if (c && c.length >= 4) {
       const dx = c[2] - c[0];
       const dy = c[3] - c[1];
       const cross = dx * (origin.y - c[1]) - dy * (origin.x - c[0]);
 
-      const leftDir = CONST.WALL_DIRECTIONS?.LEFT ?? 1;
-      const rightDir = CONST.WALL_DIRECTIONS?.RIGHT ?? 2;
+      const leftDir = directions?.LEFT ?? 1;
+      const rightDir = directions?.RIGHT ?? 2;
       if (dir === leftDir && cross <= 0) return false;
       if (dir === rightDir && cross >= 0) return false;
     }
