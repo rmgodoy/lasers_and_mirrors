@@ -1,8 +1,6 @@
 import { MODULE_ID } from "../constants.mjs";
 import { BeamRenderer } from "./beam-renderer.mjs";
 import { traceAllBeams } from "../physics/ray-caster.mjs";
-import { getAllMirrors, getMirrorData } from "../mirror-data.mjs";
-import { getTokenCenter } from "../utils/token-helpers.mjs";
 const CanvasLayer = foundry.canvas.layers.CanvasLayer ?? globalThis.CanvasLayer;
 
 /**
@@ -79,17 +77,6 @@ export class BeamLayer extends CanvasLayer {
     const opacity = game.settings.get(MODULE_ID, "beamOpacity");
     const glow = game.settings.get(MODULE_ID, "glowEffect");
     this.renderer.draw(beamGroups, { opacity, glow });
-
-    const mirrorTokens = getAllMirrors();
-    const mirrorsInfo = mirrorTokens.map(t => {
-      const data = getMirrorData(t.document);
-      return {
-        center: getTokenCenter(t),
-        orientation: data.orientation,
-        width: data.width
-      };
-    });
-    this.renderer.drawMirrors(mirrorsInfo);
   }
 }
 

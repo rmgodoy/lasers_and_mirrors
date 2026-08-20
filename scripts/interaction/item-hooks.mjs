@@ -45,13 +45,16 @@ async function onDropCanvasData(_canvas, data) {
   const center = canvas.grid.getCenterPoint({ x: data.x, y: data.y });
   const tokenData = {
     name: item.name,
-    img: item.img && item.img !== "icons/svg/item-bag.svg"
-      ? item.img
-      : (isLaserItem ? "icons/svg/light.svg" : "icons/svg/shield.svg"),
+    texture: {
+      src: item.img && item.img !== "icons/svg/item-bag.svg"
+        ? item.img
+        : (isLaserItem ? (flagData.visible ? `modules/${MODULE_ID}/assets/laser-on.svg` : `modules/${MODULE_ID}/assets/laser-off.svg`) : `modules/${MODULE_ID}/assets/mirror.svg`)
+    },
     x: center.x - canvas.grid.size / 2,
     y: center.y - canvas.grid.size / 2,
     width: 1,
     height: 1,
+    hidden: isLaserItem,
     rotation: isMirrorItem ? (flagData.orientation ?? 0) : 0,
     [`flags.${MODULE_ID}`]: flagData,
   };
@@ -88,11 +91,12 @@ function onGetSceneControlButtons(controls) {
       const point = canvas.grid.getTopLeftPoint(canvas.center);
       await TokenDocument.create({
         name: "Laser",
-        img: "icons/svg/light.svg",
+        texture: { src: `modules/${MODULE_ID}/assets/laser-on.svg` },
         x: point.x,
         y: point.y,
         width: 1,
         height: 1,
+        hidden: true,
         [`flags.${MODULE_ID}`]: { ...LASER_DEFAULTS },
       }, { parent: canvas.scene });
       refreshBeams();
@@ -109,7 +113,7 @@ function onGetSceneControlButtons(controls) {
       const point = canvas.grid.getTopLeftPoint(canvas.center);
       await TokenDocument.create({
         name: "Mirror",
-        img: "icons/svg/shield.svg",
+        texture: { src: `modules/${MODULE_ID}/assets/mirror.svg` },
         x: point.x,
         y: point.y,
         width: 1,

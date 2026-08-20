@@ -72,43 +72,6 @@ export class BeamRenderer {
   }
 
   /**
-   * Draw all mirrors as two-line visual overlays (gray front, black back).
-   * @param {Array<{center: {x:number, y:number}, orientation: number, width: number}>} mirrors
-   */
-  drawMirrors(mirrors) {
-    const mirrorGraphics = new PIXI.Graphics();
-    const gridSize = canvas?.grid?.size ?? 100;
-    
-    for (const mirror of mirrors) {
-      const halfWidth = (mirror.width * gridSize) / 2;
-      const segment = getLineSegmentFromAngle(mirror.center, mirror.orientation, halfWidth);
-      const normal = getSegmentNormal(segment.p1, segment.p2);
-      
-      const offsetAmt = 3; // pixels to offset the lines from the center axis
-
-      // Gray line (front / reflective side) - offset along normal
-      const frontP1 = { x: segment.p1.x + normal.x * offsetAmt, y: segment.p1.y + normal.y * offsetAmt };
-      const frontP2 = { x: segment.p2.x + normal.x * offsetAmt, y: segment.p2.y + normal.y * offsetAmt };
-      
-      mirrorGraphics
-        .lineStyle(4, 0xaaaaaa, 1)
-        .moveTo(frontP1.x, frontP1.y)
-        .lineTo(frontP2.x, frontP2.y);
-
-      // Black line (back side) - offset against normal
-      const backP1 = { x: segment.p1.x - normal.x * offsetAmt, y: segment.p1.y - normal.y * offsetAmt };
-      const backP2 = { x: segment.p2.x - normal.x * offsetAmt, y: segment.p2.y - normal.y * offsetAmt };
-
-      mirrorGraphics
-        .lineStyle(4, 0x000000, 1)
-        .moveTo(backP1.x, backP1.y)
-        .lineTo(backP2.x, backP2.y);
-    }
-    
-    this.container.addChild(mirrorGraphics);
-  }
-
-  /**
    * Convert hex color string to numeric (e.g. "#ff0000" → 0xff0000).
    * @param {string|number} hex
    * @returns {number}

@@ -39,6 +39,11 @@ export async function updateLaserData(tokenDoc, changes) {
   for (const [key, value] of Object.entries(changes)) {
     updateData[`flags.${MODULE_ID}.${key}`] = value;
   }
+  if (changes.visible !== undefined) {
+    updateData["texture.src"] = changes.visible
+      ? `modules/${MODULE_ID}/assets/laser-on.svg`
+      : `modules/${MODULE_ID}/assets/laser-off.svg`;
+  }
   await tokenDoc.update(updateData);
 }
 
