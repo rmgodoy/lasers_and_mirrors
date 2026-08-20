@@ -1,0 +1,28 @@
+{
+  "id": "lasers-and-mirrors",
+  "title": "Lasers & Mirrors",
+  "description": "Puzzle module for laser beams and mirrors",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "Rodrigo"
+    }
+  ],
+  "esmodules": [
+    "scripts/module.mjs"
+  ],
+  "styles": [
+    "styles/module.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ]
+}

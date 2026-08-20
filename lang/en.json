@@ -1,0 +1,55 @@
+{
+  "LAM": {
+    "settings": {
+      "maxBounces": {
+        "name": "Maximum Bounces",
+        "hint": "Maximum number of times a laser beam can reflect off mirrors."
+      },
+      "beamOpacity": {
+        "name": "Beam Opacity",
+        "hint": "Opacity level for rendered laser beams (0.1 to 1.0)."
+      },
+      "glowEffect": {
+        "name": "Glow Effect",
+        "hint": "Enable outer glow visual effect on rendered laser beams."
+      },
+      "debugMode": {
+        "name": "Debug Mode",
+        "hint": "Enable debug logging and visual overlays for laser raycasting."
+      }
+    },
+    "sheets": {
+      "laser": {
+        "title": "Laser Configuration"
+      },
+      "mirror": {
+        "title": "Mirror Configuration (GM)"
+      },
+      "mirrorPlayer": {
+        "title": "Adjust Mirror Orientation"
+      }
+    },
+    "labels": {
+      "color": "Beam Color",
+      "width": "Beam Width",
+      "range": "Beam Range (Grids)",
+      "intensity": "Beam Intensity",
+      "visible": "Laser Active / Visible",
+      "interactable": "Players Can Rotate",
+      "attachable": "Can Attach to Tokens",
+      "orientation": "Mirror Angle (Degrees)"
+    },
+    "hud": {
+      "adjustMirror": "Rotate Mirror",
+      "toggleLaser": "Toggle Laser Beam",
+      "attachLaser": "Attach Laser to Target",
+      "detachLaser": "Detach Laser"
+    },
+    "notify": {
+      "notAdjacent": "You must be adjacent to the mirror to adjust it.",
+      "laserAttached": "Laser attached to target token.",
+      "laserDetached": "Laser detached.",
+      "laserToggled": "Laser state toggled."
+    }
+  }
+}
