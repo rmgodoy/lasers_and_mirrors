@@ -16,6 +16,11 @@ export const FLAGS = {
   EMIT_LIGHT: "emitLight",
   LIGHT_RADIUS: "lightRadius",
   PROVIDES_VISION: "providesVision",
+  // Mirror & Laser Rotation Limits
+  LIMIT_ROTATION: "limitRotation",
+  MIN_DEG: "minDeg",
+  MAX_DEG: "maxDeg",
+  INVERT_LIMITS: "invertLimits",
   // Mirror flags
   ORIENTATION: "orientation",
   TWO_SIDED: "twoSided",
@@ -47,6 +52,10 @@ export const LASER_DEFAULTS = {
   emitLight: true,
   lightRadius: 1,
   providesVision: false,
+  limitRotation: false,
+  minDeg: 0,
+  maxDeg: 360,
+  invertLimits: false,
 };
 
 
@@ -59,6 +68,10 @@ export const MIRROR_DEFAULTS = {
   interactable: true,
   attachable: false,
   attachedToTokenId: null,
+  limitRotation: false,
+  minDeg: 0,
+  maxDeg: 360,
+  invertLimits: false,
 };
 
 export const TRIGGER_DEFAULTS = {

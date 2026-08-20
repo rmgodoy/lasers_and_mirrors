@@ -20,6 +20,7 @@ import {
 } from "./attachment.mjs";
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
+import { isAngleInArc, clampAngleToArc, angularDistance, normalizeAngle } from "../utils/angle-limits.mjs";
 
 /**
  * Format an angle in degrees for display:
@@ -274,12 +275,33 @@ export class MirrorHUD extends PIXI.Container {
   }
 
   /**
+   * Get rotation limit configuration for the current token.
+   * @returns {{ hasLimits: boolean, minDeg: number, maxDeg: number, invertLimits: boolean }}
+   */
+  _getLimits() {
+    if (!this.token?.document) {
+      return { hasLimits: false, minDeg: 0, maxDeg: 360, invertLimits: false };
+    }
+    const isLaserToken = isLaser(this.token.document);
+    const data = isLaserToken ? getLaserData(this.token.document) : getMirrorData(this.token.document);
+    return {
+      hasLimits: Boolean(data?.limitRotation),
+      minDeg: Number(data?.minDeg ?? 0),
+      maxDeg: Number(data?.maxDeg ?? 360),
+      invertLimits: Boolean(data?.invertLimits),
+    };
+  }
+
+  /**
    * Draw the interactive circular track with 15° and 45°/90° tick marks.
+   * When rotation limits are enabled, visually differentiates the allowed vs forbidden arcs
+   * and draws prominent limit stop barriers at minDeg and maxDeg.
    */
   _drawTrack() {
     const bounds = this._getPixelSize();
     const cx = bounds.width / 2;
     const cy = bounds.height / 2;
+    const limits = this._getLimits();
 
     this.track.clear();
 
@@ -287,47 +309,162 @@ export class MirrorHUD extends PIXI.Container {
     this.track.lineStyle(28, 0xffffff, 0.001);
     this.track.drawCircle(cx, cy, this.radius);
 
-    // 2. Outer and inner subtle track borders
-    this.track.lineStyle(1, 0x00e5ff, 0.2);
-    this.track.drawCircle(cx, cy, this.radius + 5);
-    this.track.drawCircle(cx, cy, this.radius - 5);
+    const toMathRad = (deg) => ((deg + 90) * Math.PI) / 180;
 
-    // 3. Main track ring
-    this.track.lineStyle(2.5, 0x00e5ff, 0.45);
-    this.track.drawCircle(cx, cy, this.radius);
+    if (!limits.hasLimits) {
+      // Normal full-circle track
+      this.track.lineStyle(1, 0x00e5ff, 0.2);
+      this.track.drawCircle(cx, cy, this.radius + 5);
+      this.track.drawCircle(cx, cy, this.radius - 5);
 
-    // 4. Tick marks every 15 degrees around the circle
-    for (let deg = 0; deg < 360; deg += 15) {
-      // Convert Foundry rotation deg to math angle (0° = South, 90° = West...)
-      const rad = ((deg + 90) * Math.PI) / 180;
-      const cos = Math.cos(rad);
-      const sin = Math.sin(rad);
+      this.track.lineStyle(2.5, 0x00e5ff, 0.45);
+      this.track.drawCircle(cx, cy, this.radius);
 
-      let tickInner = 3;
-      let tickOuter = 3;
-      let tickWidth = 1;
-      let tickAlpha = 0.4;
-      let tickColor = 0x00e5ff;
+      // Tick marks every 15 degrees around the circle
+      for (let deg = 0; deg < 360; deg += 15) {
+        const rad = toMathRad(deg);
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
 
-      if (deg % 90 === 0) {
-        // Major cardinal (0, 90, 180, 270)
-        tickInner = 6;
-        tickOuter = 6;
-        tickWidth = 2;
-        tickAlpha = 0.95;
-        tickColor = 0xffffff;
-      } else if (deg % 45 === 0) {
-        // Semi-major (45, 135, 225, 315)
-        tickInner = 5;
-        tickOuter = 5;
-        tickWidth = 1.5;
-        tickAlpha = 0.75;
-        tickColor = 0x66ffff;
+        let tickInner = 3;
+        let tickOuter = 3;
+        let tickWidth = 1;
+        let tickAlpha = 0.4;
+        let tickColor = 0x00e5ff;
+
+        if (deg % 90 === 0) {
+          tickInner = 6;
+          tickOuter = 6;
+          tickWidth = 2;
+          tickAlpha = 0.95;
+          tickColor = 0xffffff;
+        } else if (deg % 45 === 0) {
+          tickInner = 5;
+          tickOuter = 5;
+          tickWidth = 1.5;
+          tickAlpha = 0.75;
+          tickColor = 0x66ffff;
+        }
+
+        this.track.lineStyle(tickWidth, tickColor, tickAlpha);
+        this.track.moveTo(cx + (this.radius - tickInner) * cos, cy + (this.radius - tickInner) * sin);
+        this.track.lineTo(cx + (this.radius + tickOuter) * cos, cy + (this.radius + tickOuter) * sin);
+      }
+    } else {
+      // Rotation Limits Enabled: Clockwise Allowed Arc from minDeg to maxDeg
+      const startDeg = limits.minDeg;
+      const endDeg = limits.maxDeg;
+
+      let startRad = toMathRad(startDeg);
+      let endRad = toMathRad(endDeg);
+      if (endRad <= startRad) endRad += 2 * Math.PI;
+
+      const forbStartRad = endRad;
+      const forbEndRad = startRad + 2 * Math.PI;
+
+      // 1. Forbidden Arc (dim red-tinted restricted zone)
+      if (forbEndRad > forbStartRad + 1e-4) {
+        const xForbStart1 = cx + (this.radius + 5) * Math.cos(forbStartRad);
+        const yForbStart1 = cy + (this.radius + 5) * Math.sin(forbStartRad);
+        this.track.lineStyle(1, 0xff3344, 0.15);
+        this.track.moveTo(xForbStart1, yForbStart1);
+        this.track.arc(cx, cy, this.radius + 5, forbStartRad, forbEndRad, false);
+
+        const xForbStart2 = cx + (this.radius - 5) * Math.cos(forbStartRad);
+        const yForbStart2 = cy + (this.radius - 5) * Math.sin(forbStartRad);
+        this.track.lineStyle(1, 0xff3344, 0.15);
+        this.track.moveTo(xForbStart2, yForbStart2);
+        this.track.arc(cx, cy, this.radius - 5, forbStartRad, forbEndRad, false);
+
+        const xForbStart = cx + this.radius * Math.cos(forbStartRad);
+        const yForbStart = cy + this.radius * Math.sin(forbStartRad);
+        this.track.lineStyle(2, 0xff3344, 0.35);
+        this.track.moveTo(xForbStart, yForbStart);
+        this.track.arc(cx, cy, this.radius, forbStartRad, forbEndRad, false);
       }
 
-      this.track.lineStyle(tickWidth, tickColor, tickAlpha);
-      this.track.moveTo(cx + (this.radius - tickInner) * cos, cy + (this.radius - tickInner) * sin);
-      this.track.lineTo(cx + (this.radius + tickOuter) * cos, cy + (this.radius + tickOuter) * sin);
+      // 2. Allowed Arc (glowing cyan / vibrant active zone)
+      if (endRad > startRad + 1e-4) {
+        // Outer glow
+        const xStartGlow = cx + this.radius * Math.cos(startRad);
+        const yStartGlow = cy + this.radius * Math.sin(startRad);
+        this.track.lineStyle(6, 0x00e5ff, 0.15);
+        this.track.moveTo(xStartGlow, yStartGlow);
+        this.track.arc(cx, cy, this.radius, startRad, endRad, false);
+
+        // Guide rails
+        const xStart1 = cx + (this.radius + 5) * Math.cos(startRad);
+        const yStart1 = cy + (this.radius + 5) * Math.sin(startRad);
+        this.track.lineStyle(1.5, 0x00e5ff, 0.4);
+        this.track.moveTo(xStart1, yStart1);
+        this.track.arc(cx, cy, this.radius + 5, startRad, endRad, false);
+
+        const xStart2 = cx + (this.radius - 5) * Math.cos(startRad);
+        const yStart2 = cy + (this.radius - 5) * Math.sin(startRad);
+        this.track.lineStyle(1.5, 0x00e5ff, 0.4);
+        this.track.moveTo(xStart2, yStart2);
+        this.track.arc(cx, cy, this.radius - 5, startRad, endRad, false);
+
+        // Main track
+        const xStart = cx + this.radius * Math.cos(startRad);
+        const yStart = cy + this.radius * Math.sin(startRad);
+        this.track.lineStyle(3, 0x00e5ff, 0.85);
+        this.track.moveTo(xStart, yStart);
+        this.track.arc(cx, cy, this.radius, startRad, endRad, false);
+      }
+
+      // 3. Tick marks around the circle
+      for (let deg = 0; deg < 360; deg += 15) {
+        const rad = toMathRad(deg);
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const isAllowed = isAngleInArc(deg, limits.minDeg, limits.maxDeg);
+
+        let tickInner = 3;
+        let tickOuter = 3;
+        let tickWidth = 1;
+        let tickAlpha = isAllowed ? 0.4 : 0.15;
+        let tickColor = isAllowed ? 0x00e5ff : 0xff5566;
+
+        if (deg % 90 === 0) {
+          tickInner = 6;
+          tickOuter = 6;
+          tickWidth = 2;
+          tickAlpha = isAllowed ? 0.95 : 0.3;
+          tickColor = isAllowed ? 0xffffff : 0xff7788;
+        } else if (deg % 45 === 0) {
+          tickInner = 5;
+          tickOuter = 5;
+          tickWidth = 1.5;
+          tickAlpha = isAllowed ? 0.75 : 0.25;
+          tickColor = isAllowed ? 0x66ffff : 0xff6677;
+        }
+
+        this.track.lineStyle(tickWidth, tickColor, tickAlpha);
+        this.track.moveTo(cx + (this.radius - tickInner) * cos, cy + (this.radius - tickInner) * sin);
+        this.track.lineTo(cx + (this.radius + tickOuter) * cos, cy + (this.radius + tickOuter) * sin);
+      }
+
+      // 4. Limit Stop Barriers at minDeg and maxDeg
+      const drawLimitStop = (deg) => {
+        const rad = toMathRad(deg);
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        // Stop bar perpendicular to track
+        this.track.lineStyle(3.5, 0xffb74d, 0.95);
+        this.track.moveTo(cx + (this.radius - 8) * cos, cy + (this.radius - 8) * sin);
+        this.track.lineTo(cx + (this.radius + 8) * cos, cy + (this.radius + 8) * sin);
+
+        // Stop cap bead
+        this.track.beginFill(0xffb74d, 1.0);
+        this.track.drawCircle(cx + (this.radius + 8) * cos, cy + (this.radius + 8) * sin, 2.5);
+        this.track.drawCircle(cx + (this.radius - 8) * cos, cy + (this.radius - 8) * sin, 2.5);
+        this.track.endFill();
+      };
+
+      drawLimitStop(limits.minDeg);
+      drawLimitStop(limits.maxDeg);
     }
   }
 
@@ -416,15 +553,28 @@ export class MirrorHUD extends PIXI.Container {
     const formatted = formatAngle(orientation);
     this.badgeAngleText.text = `${formatted}°`;
 
-    const borderColor = isCtrl ? 0xffb74d : (isShift ? 0x66ffaa : 0x00e5ff);
-    const modeText = isCtrl ? "CTRL: 15° SNAP" : (isShift ? "SHIFT: 0.2° MICRO" : "1° STEP");
-    const modeColor = isCtrl ? 0xffb74d : (isShift ? 0x66ffaa : 0x88ccdd);
+    let borderColor = isCtrl ? 0xffb74d : (isShift ? 0x66ffaa : 0x00e5ff);
+    let modeText = isCtrl ? "CTRL: 15° SNAP" : (isShift ? "SHIFT: 0.2° MICRO" : "1° STEP");
+    let modeColor = isCtrl ? 0xffb74d : (isShift ? 0x66ffaa : 0x88ccdd);
+
+    const limits = this._getLimits();
+    if (limits.hasLimits) {
+      if (angularDistance(orientation, limits.minDeg) < 0.3) {
+        modeText = `MIN LIMIT: ${formatAngle(limits.minDeg)}°`;
+        modeColor = 0xffb74d;
+        borderColor = 0xffb74d;
+      } else if (angularDistance(orientation, limits.maxDeg) < 0.3) {
+        modeText = `MAX LIMIT: ${formatAngle(limits.maxDeg)}°`;
+        modeColor = 0xffb74d;
+        borderColor = 0xffb74d;
+      }
+    }
 
     this.badgeModeText.text = modeText;
     this.badgeModeText.style.fill = modeColor;
 
     // Draw badge background box
-    const bw = 96;
+    const bw = 104;
     const bh = 34;
     this.badgeBg.clear();
     // Shadow / glow
@@ -502,10 +652,17 @@ export class MirrorHUD extends PIXI.Container {
     if (!canRotate) return;
     if (this.dragging) return; // Don't override while dragging
 
-    const targetOrientation = orientation !== undefined ? orientation : (this.token.document.rotation ?? 0);
+    const limits = this._getLimits();
+    let targetOrientation = orientation !== undefined ? orientation : (this.token.document.rotation ?? 0);
+    if (limits.hasLimits) {
+      targetOrientation = clampAngleToArc(targetOrientation, limits.minDeg, limits.maxDeg);
+    }
     this.currentOrientation = Number(((targetOrientation % 360 + 360) % 360).toFixed(1));
     this._currentVirtualAngle = this.currentOrientation;
     
+    // Redraw track when limits may have changed
+    this._drawTrack();
+
     const isShift = this._isShiftHeld();
     const isCtrl = this._isCtrlHeld();
     this._updateVisuals(this.currentOrientation, isShift, isCtrl);
@@ -531,12 +688,16 @@ export class MirrorHUD extends PIXI.Container {
       const isShift = this._isShiftHeld(event);
       const isCtrl = this._isCtrlHeld(event);
       const clickAngle = this._getPointerFoundryAngle(event);
+      const limits = this._getLimits();
 
       if (!isShift) {
         // Normal or Ctrl: snap/jump to clicked angle
         let newAngle = isCtrl ? Math.round(clickAngle / 15) * 15 : Math.round(clickAngle);
         newAngle = (newAngle % 360 + 360) % 360;
         if (newAngle >= 360) newAngle = 0;
+        if (limits.hasLimits) {
+          newAngle = clampAngleToArc(newAngle, limits.minDeg, limits.maxDeg);
+        }
         this.currentOrientation = newAngle;
         this._currentVirtualAngle = newAngle;
         this._applyLocalRotation(newAngle);
@@ -702,6 +863,12 @@ export class MirrorHUD extends PIXI.Container {
 
     if (steppedRotation >= 360) steppedRotation = 0;
     if (steppedRotation < 0) steppedRotation = 0;
+
+    const limits = this._getLimits();
+    if (limits.hasLimits) {
+      steppedRotation = clampAngleToArc(steppedRotation, limits.minDeg, limits.maxDeg);
+      this._currentVirtualAngle = steppedRotation;
+    }
 
     this.currentOrientation = steppedRotation;
 

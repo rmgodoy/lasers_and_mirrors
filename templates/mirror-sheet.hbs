@@ -26,6 +26,40 @@
     <label for="attachable">{{localize "LAM.labels.attachable"}}</label>
     <input type="checkbox" name="attachable" {{checked attachable}}/>
   </div>
+
+  <div class="form-group">
+    <label for="limitRotation">{{localize "LAM.labels.limitRotation"}}</label>
+    <input type="checkbox" name="limitRotation" {{checked limitRotation}}/>
+  </div>
+
+  <div class="lam-limits-container">
+    <div class="form-group">
+      <label for="minDeg">{{localize "LAM.labels.minDeg"}}</label>
+      <div class="lam-input-with-button">
+        <input type="number" name="minDeg" min="0" max="360" step="0.1" value="{{minDeg}}"/>
+        <button type="button" class="lam-btn-action" data-action="setCurrentMin" title="{{localize 'LAM.buttons.setCurrentMin'}}">
+          <i class="fas fa-arrow-down"></i> {{localize "LAM.buttons.setCurrentMinShort"}}
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="maxDeg">{{localize "LAM.labels.maxDeg"}}</label>
+      <div class="lam-input-with-button">
+        <input type="number" name="maxDeg" min="0" max="360" step="0.1" value="{{maxDeg}}"/>
+        <button type="button" class="lam-btn-action" data-action="setCurrentMax" title="{{localize 'LAM.buttons.setCurrentMax'}}">
+          <i class="fas fa-arrow-up"></i> {{localize "LAM.buttons.setCurrentMaxShort"}}
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group lam-flip-row">
+      <button type="button" class="lam-btn-flip" data-action="flipLimits" title="{{localize 'LAM.buttons.flipLimitsHint'}}">
+        <i class="fas fa-arrows-rotate"></i> {{localize "LAM.buttons.flipLimits"}}
+      </button>
+      <span class="lam-arc-summary">{{arcSummary}}</span>
+    </div>
+  </div>
   {{/if}}
 
   <div class="form-group">

@@ -166,6 +166,15 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
   // Refresh active HUD position/orientation if open on this token or an attached object
   refreshActiveHUD(tokenDoc);
 
+  // Refresh open config sheets for this token if any
+  if (foundry.applications?.instances) {
+    for (const app of foundry.applications.instances.values()) {
+      if (app.tokenDoc?.id === tokenDoc.id && typeof app.render === "function") {
+        app.render();
+      }
+    }
+  }
+
   // Refresh beams if flags changed, position/rotation changed, or if it's any module token
   const hasModuleFlagChange = Boolean(changes.flags?.[MODULE_ID]);
   if (hasModuleFlagChange || posChanged || isModuleToken(tokenDoc)) {

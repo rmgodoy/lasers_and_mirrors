@@ -84,3 +84,101 @@
   padding: 6px;
 }
 
+/* Rotation limits sub-panel */
+.lasers-and-mirrors-sheet .lam-limits-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(0, 229, 255, 0.04);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-left: 3px solid #00e5ff;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+
+.lasers-and-mirrors-sheet .lam-hidden {
+  display: none !important;
+}
+
+.lasers-and-mirrors-sheet .lam-input-with-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 2;
+}
+
+.lasers-and-mirrors-sheet .lam-input-with-button input[type="number"] {
+  flex: 1;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-action {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: normal;
+  border: 1px solid #7a7971;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #00e5ff;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease-in-out;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-action:hover {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: #00e5ff;
+  color: #ffffff;
+  box-shadow: 0 0 4px rgba(0, 229, 255, 0.4);
+}
+
+.lasers-and-mirrors-sheet .lam-flip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.lasers-and-mirrors-sheet .lam-btn-flip {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: normal;
+  border: 1px solid #ffb74d;
+  border-radius: 3px;
+  background: rgba(255, 183, 77, 0.12);
+  color: #ffb74d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease-in-out;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-flip:hover {
+  background: rgba(255, 183, 77, 0.3);
+  color: #ffffff;
+  box-shadow: 0 0 5px rgba(255, 183, 77, 0.5);
+}
+
+.lasers-and-mirrors-sheet .lam-arc-summary {
+  font-size: 11px;
+  font-weight: bold;
+  color: #88ccdd;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  text-align: right;
+  white-space: nowrap;
+}
+
+

@@ -46,7 +46,7 @@ export class MirrorPlayerSheet extends HandlebarsApplicationMixin(ApplicationV2)
   /** @override */
   async _prepareContext(options) {
     const data = getMirrorData(this.tokenDoc);
-    return { orientation: data.orientation ?? this.tokenDoc?.rotation ?? 0 };
+    return { orientation: this.tokenDoc?.rotation ?? data.orientation ?? 0 };
   }
 
   /** @override */

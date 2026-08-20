@@ -1,4 +1,5 @@
 import { MODULE_ID, FLAGS, TYPES, ACTOR_TYPES, LASER_DEFAULTS } from "./constants.mjs";
+import { clampAngleToArc } from "./utils/angle-limits.mjs";
 
 /**
  * Check if a token is a laser.
@@ -22,7 +23,11 @@ export function getLaserData(tokenDoc) {
   const doc = tokenDoc?.document ?? tokenDoc;
   const flags = doc?.flags?.[MODULE_ID] ?? {};
   const actorSystem = doc?.actor?.system?.toObject?.() ?? doc?.actor?.system ?? {};
-  return foundry.utils.mergeObject({ ...LASER_DEFAULTS }, { ...actorSystem, ...flags }, { inplace: false });
+  const merged = foundry.utils.mergeObject({ ...LASER_DEFAULTS }, { ...actorSystem, ...flags }, { inplace: false });
+  if (flags.orientation === undefined && doc?.rotation !== undefined) {
+    merged.orientation = doc.rotation;
+  }
+  return merged;
 }
 
 /**
@@ -43,12 +48,35 @@ export async function initLaser(tokenDoc) {
  */
 export async function updateLaserData(tokenDoc, changes) {
   const doc = tokenDoc.document ?? tokenDoc;
+  const currentData = getLaserData(doc);
+
+  const effectiveLimits = {
+    limitRotation: changes.limitRotation !== undefined ? Boolean(changes.limitRotation) : Boolean(currentData.limitRotation),
+    minDeg: changes.minDeg !== undefined ? Number(changes.minDeg) : Number(currentData.minDeg ?? 0),
+    maxDeg: changes.maxDeg !== undefined ? Number(changes.maxDeg) : Number(currentData.maxDeg ?? 360),
+  };
+
   const updateData = {};
   for (const [key, value] of Object.entries(changes)) {
     updateData[`flags.${MODULE_ID}.${key}`] = value;
   }
+
   if ("orientation" in changes) {
-    updateData.rotation = Number(changes.orientation);
+    let ori = Number(changes.orientation);
+    if (effectiveLimits.limitRotation) {
+      ori = clampAngleToArc(ori, effectiveLimits.minDeg, effectiveLimits.maxDeg);
+      changes.orientation = ori;
+      updateData[`flags.${MODULE_ID}.orientation`] = ori;
+    }
+    updateData.rotation = ori;
+  } else if (effectiveLimits.limitRotation) {
+    const currentOri = Number(doc.rotation ?? currentData.orientation ?? 0);
+    const clampedOri = clampAngleToArc(currentOri, effectiveLimits.minDeg, effectiveLimits.maxDeg);
+    if (Math.abs(clampedOri - currentOri) > 1e-4) {
+      changes.orientation = clampedOri;
+      updateData[`flags.${MODULE_ID}.orientation`] = clampedOri;
+      updateData.rotation = clampedOri;
+    }
   }
   if (changes.visible !== undefined) {
     updateData["texture.src"] = changes.visible

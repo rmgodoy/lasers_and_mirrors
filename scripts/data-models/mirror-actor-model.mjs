@@ -29,6 +29,22 @@ export class MirrorActorModel extends foundry.abstract.TypeDataModel {
         initial: null,
         nullable: true,
       }),
+      limitRotation: new fields.BooleanField({ initial: false }),
+      minDeg: new fields.NumberField({
+        required: true,
+        initial: 0,
+        min: 0,
+        max: 360,
+        step: 0.1,
+      }),
+      maxDeg: new fields.NumberField({
+        required: true,
+        initial: 360,
+        min: 0,
+        max: 360,
+        step: 0.1,
+      }),
+      invertLimits: new fields.BooleanField({ initial: false }),
     };
   }
 }

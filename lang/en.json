@@ -51,13 +51,25 @@
       "providesVision": "Provides Direct Vision",
       "interactable": "Players Can Rotate",
       "attachable": "Can Attach to Tokens",
+      "limitRotation": "Limit Rotation Angle",
+      "minDeg": "Min Angle (°)",
+      "maxDeg": "Max Angle (°)",
+      "invertLimits": "Invert Arc",
       "twoSided": "Two-Sided (Reflects Both Sides)",
-      "orientation": "Mirror Angle (Degrees)",
+      "orientation": "Orientation (Degrees)",
       "enabled": "Enabled",
       "passThrough": "Beam Passes Through",
       "onBeamHit": "On Beam Hit (Macro)",
       "onBeamStay": "On Beam Stay (Macro, 500ms loop)",
       "onBeamLost": "On Beam Lost (Macro)"
+    },
+    "buttons": {
+      "setCurrentMin": "Set Current Orientation as Min Angle",
+      "setCurrentMinShort": "Current",
+      "setCurrentMax": "Set Current Orientation as Max Angle",
+      "setCurrentMaxShort": "Current",
+      "flipLimits": "Flip Allowed Side",
+      "flipLimitsHint": "Flip which side of the circular arc is the allowed rotation range"
     },
     "hud": {
       "adjustMirror": "Rotate Mirror",
