@@ -54,6 +54,7 @@ export class MirrorTokenConfigSheet extends HandlebarsApplicationMixin(Applicati
       color: data.color,
       width: data.width,
       orientation: data.orientation ?? this.tokenDoc?.rotation ?? 0,
+      twoSided: data.twoSided ?? false,
       interactable: data.interactable ?? true,
       attachable: data.attachable ?? false,
     };
@@ -79,6 +80,7 @@ export class MirrorTokenConfigSheet extends HandlebarsApplicationMixin(Applicati
     const data = formData.object;
     if ("width" in data) data.width = Number(data.width);
     if ("orientation" in data) data.orientation = Number(data.orientation);
+    data.twoSided = Boolean(data.twoSided);
     data.interactable = Boolean(data.interactable);
     data.attachable = Boolean(data.attachable);
     await updateMirrorData(this.tokenDoc, data);

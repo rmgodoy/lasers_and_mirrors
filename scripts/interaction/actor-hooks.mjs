@@ -86,8 +86,11 @@ function onPreCreateActor(actor, data, options, userId) {
       prototypeToken: foundry.utils.mergeObject(proto, data.prototypeToken ?? {})
     });
   } else if (actor.type === ACTOR_TYPES.MIRROR) {
-    const defaultImg = `modules/${MODULE_ID}/assets/mirror.svg`;
     const sysData = data.system ?? MIRROR_DEFAULTS;
+    const isTwoSided = Boolean(sysData.twoSided ?? data.prototypeToken?.flags?.[MODULE_ID]?.twoSided ?? false);
+    const defaultImg = isTwoSided
+      ? `modules/${MODULE_ID}/assets/mirror-two-sided.svg`
+      : `modules/${MODULE_ID}/assets/mirror.svg`;
     const proto = {
       texture: { src: defaultImg },
       width: 1,

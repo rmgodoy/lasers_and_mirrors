@@ -18,6 +18,7 @@ export const FLAGS = {
   PROVIDES_VISION: "providesVision",
   // Mirror flags
   ORIENTATION: "orientation",
+  TWO_SIDED: "twoSided",
   // Trigger flags
   ENABLED: "enabled",
   PASS_THROUGH: "passThrough",
@@ -54,6 +55,7 @@ export const MIRROR_DEFAULTS = {
   color: "#c0c0c0",
   width: 1,
   orientation: 0,
+  twoSided: false,
   interactable: true,
   attachable: false,
   attachedToTokenId: null,

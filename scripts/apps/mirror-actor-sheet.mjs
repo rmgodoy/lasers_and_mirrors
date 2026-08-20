@@ -44,6 +44,7 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.color = data.color ?? MIRROR_DEFAULTS.color;
     context.width = data.width ?? MIRROR_DEFAULTS.width;
     context.orientation = data.orientation ?? MIRROR_DEFAULTS.orientation;
+    context.twoSided = data.twoSided ?? MIRROR_DEFAULTS.twoSided;
     context.interactable = data.interactable ?? MIRROR_DEFAULTS.interactable;
     context.attachable = data.attachable ?? MIRROR_DEFAULTS.attachable;
     return context;
@@ -71,6 +72,7 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const data = formData.object;
     if ("width" in data) data.width = Number(data.width);
     if ("orientation" in data) data.orientation = Number(data.orientation);
+    data.twoSided = Boolean(data.twoSided);
     data.interactable = Boolean(data.interactable);
     data.attachable = Boolean(data.attachable);
 
@@ -79,10 +81,23 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       await updateMirrorData(this.document.token, data);
     } else {
       // Base World Actor sheet (sidebar): update actor system & prototypeToken defaults
-      await this.document.update({
+      const updatePayload = {
         system: data,
         [`prototypeToken.flags.${MODULE_ID}`]: { ...MIRROR_DEFAULTS, ...data },
-      });
+      };
+      const currentActorImg = this.document.img ?? "";
+      const isDefaultActorImg = !currentActorImg ||
+        currentActorImg.endsWith("/assets/mirror.svg") ||
+        currentActorImg.endsWith("/assets/mirror-two-sided.svg") ||
+        currentActorImg === "icons/svg/mystery-man.svg";
+      if (isDefaultActorImg) {
+        const newImg = data.twoSided
+          ? `modules/${MODULE_ID}/assets/mirror-two-sided.svg`
+          : `modules/${MODULE_ID}/assets/mirror.svg`;
+        updatePayload.img = newImg;
+        updatePayload["prototypeToken.texture.src"] = newImg;
+      }
+      await this.document.update(updatePayload);
       // Only sync linked tokens on scene
       const linkedTokens = canvas.scene?.tokens?.filter(t => t.actorId === this.document.id && t.isLinked);
       if (linkedTokens) {

@@ -150,7 +150,9 @@ function traceSingleBeam(laserToken, laserData, maxBounces) {
         hitMirrorToken: nearestHit.mirrorToken
       });
 
-      if (isHittingFrontSide(direction, nearestHit.normal)) {
+      const reflects = nearestHit.mirrorData?.twoSided || isHittingFrontSide(direction, nearestHit.normal);
+
+      if (reflects) {
         direction = reflect(direction, nearestHit.normal);
         origin = {
           x: nearestHit.point.x + direction.x * 1,
@@ -309,7 +311,8 @@ function getMirrorIntersections(origin, rayEnd, excludeLaserToken, lastMirrorId)
         t: hit.t,
         dist,
         normal,
-        mirrorToken
+        mirrorToken,
+        mirrorData
       });
     }
   }

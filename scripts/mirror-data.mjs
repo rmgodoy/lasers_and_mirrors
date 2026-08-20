@@ -50,6 +50,18 @@ export async function updateMirrorData(tokenDoc, changes) {
   if ("orientation" in changes) {
     updateData.rotation = Number(changes.orientation);
   }
+  if (changes.twoSided !== undefined) {
+    const currentSrc = doc.texture?.src ?? "";
+    const isDefaultMirrorSvg = !currentSrc ||
+      currentSrc.endsWith("/assets/mirror.svg") ||
+      currentSrc.endsWith("/assets/mirror-two-sided.svg") ||
+      currentSrc === "icons/svg/mystery-man.svg";
+    if (isDefaultMirrorSvg) {
+      updateData["texture.src"] = changes.twoSided
+        ? `modules/${MODULE_ID}/assets/mirror-two-sided.svg`
+        : `modules/${MODULE_ID}/assets/mirror.svg`;
+    }
+  }
   await doc.update(updateData, { animate: false });
 
   if (doc.actor && doc.actor.type === ACTOR_TYPES.MIRROR) {

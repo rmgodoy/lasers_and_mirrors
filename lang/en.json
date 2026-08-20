@@ -51,6 +51,7 @@
       "providesVision": "Provides Direct Vision",
       "interactable": "Players Can Rotate",
       "attachable": "Can Attach to Tokens",
+      "twoSided": "Two-Sided (Reflects Both Sides)",
       "orientation": "Mirror Angle (Degrees)",
       "enabled": "Enabled",
       "passThrough": "Beam Passes Through",

@@ -36,7 +36,10 @@ function onPreCreateToken(tokenDoc, data, options, userId) {
 
   if (actor.type === ACTOR_TYPES.MIRROR) {
     const sys = actor.system ?? MIRROR_DEFAULTS;
-    const defaultImg = `modules/${MODULE_ID}/assets/mirror.svg`;
+    const isTwoSided = Boolean(data.flags?.[MODULE_ID]?.twoSided ?? sys.twoSided ?? false);
+    const defaultImg = isTwoSided
+      ? `modules/${MODULE_ID}/assets/mirror-two-sided.svg`
+      : `modules/${MODULE_ID}/assets/mirror.svg`;
     const flags = {
       ...MIRROR_DEFAULTS,
       ...sys,
