@@ -51,6 +51,7 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.orientation = currentOrientation;
     context.twoSided = data.twoSided ?? MIRROR_DEFAULTS.twoSided;
     context.interactable = data.interactable ?? MIRROR_DEFAULTS.interactable;
+    context.interactionRange = data.interactionRange ?? MIRROR_DEFAULTS.interactionRange;
     context.attachable = data.attachable ?? MIRROR_DEFAULTS.attachable;
     context.limitRotation = data.limitRotation ?? MIRROR_DEFAULTS.limitRotation;
     context.minDeg = minDeg;
@@ -146,6 +147,7 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if ("orientation" in data) data.orientation = Number(data.orientation);
     data.twoSided = Boolean(data.twoSided);
     data.interactable = Boolean(data.interactable);
+    if ("interactionRange" in data) data.interactionRange = Math.max(1, Number(data.interactionRange) || 1);
     data.attachable = Boolean(data.attachable);
     data.limitRotation = Boolean(data.limitRotation);
     if ("minDeg" in data) data.minDeg = Number(data.minDeg);

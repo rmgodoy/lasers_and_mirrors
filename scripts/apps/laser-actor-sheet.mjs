@@ -55,6 +55,7 @@ export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.lightRadius = data.lightRadius ?? LASER_DEFAULTS.lightRadius;
     context.providesVision = data.providesVision ?? LASER_DEFAULTS.providesVision;
     context.interactable = data.interactable ?? LASER_DEFAULTS.interactable;
+    context.interactionRange = data.interactionRange ?? LASER_DEFAULTS.interactionRange;
     context.attachable = data.attachable ?? LASER_DEFAULTS.attachable;
     context.limitRotation = data.limitRotation ?? LASER_DEFAULTS.limitRotation;
     context.minDeg = minDeg;
@@ -151,6 +152,7 @@ export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     data.emitLight = Boolean(data.emitLight);
     data.providesVision = Boolean(data.providesVision);
     data.interactable = Boolean(data.interactable);
+    if ("interactionRange" in data) data.interactionRange = Math.max(1, Number(data.interactionRange) || 1);
     data.attachable = Boolean(data.attachable);
     data.limitRotation = Boolean(data.limitRotation);
     data.width = Number(data.width);

@@ -1,6 +1,6 @@
 import { MODULE_ID, TYPES, FLAGS } from "../constants.mjs";
-import { isLaser } from "../laser-data.mjs";
-import { isMirror } from "../mirror-data.mjs";
+import { isLaser, getLaserData } from "../laser-data.mjs";
+import { isMirror, getMirrorData } from "../mirror-data.mjs";
 import { isTrigger } from "../trigger-data.mjs";
 
 /**
@@ -23,13 +23,45 @@ export function isModuleToken(tokenDoc) {
 }
 
 /**
- * Check if two tokens are adjacent (within 1 grid unit).
+ * Get the interaction range in grid squares configured on a token (laser or mirror).
+ * Defaults to 1 if not set or not a module token.
+ * @param {TokenDocument|Token} tokenDoc
+ * @returns {number}
+ */
+export function getTokenInteractionRange(tokenDoc) {
+  if (!tokenDoc) return 1;
+  const doc = tokenDoc?.document ?? tokenDoc;
+  if (isLaser(doc)) {
+    const data = getLaserData(doc);
+    return Math.max(1, Number(data?.interactionRange) || 1);
+  }
+  if (isMirror(doc)) {
+    const data = getMirrorData(doc);
+    return Math.max(1, Number(data?.interactionRange) || 1);
+  }
+  return 1;
+}
+
+/**
+ * Check if two tokens are within interaction range (alias for isTokenWithinRange).
  * Uses canvas.grid.measurePath for V14 compatibility.
  * @param {Token} tokenA - Token placeable
  * @param {Token} tokenB - Token placeable
+ * @param {number} [maxRange] - Optional explicit range in grid units/squares
  * @returns {boolean}
  */
-export function areTokensAdjacent(tokenA, tokenB) {
+export function areTokensAdjacent(tokenA, tokenB, maxRange) {
+  return isTokenWithinRange(tokenA, tokenB, maxRange);
+}
+
+/**
+ * Check if two tokens are within interaction range.
+ * @param {Token} tokenA - Token placeable
+ * @param {Token} tokenB - Token placeable
+ * @param {number} [maxRange] - Optional explicit range in grid units/squares
+ * @returns {boolean}
+ */
+export function isTokenWithinRange(tokenA, tokenB, maxRange) {
   if (!tokenA || !tokenB) return false;
   const centerA = getTokenCenter(tokenA);
   const centerB = getTokenCenter(tokenB);
@@ -37,8 +69,18 @@ export function areTokensAdjacent(tokenA, tokenB) {
     { x: centerA.x, y: centerA.y },
     { x: centerB.x, y: centerB.y }
   ];
-  const result = canvas.grid.measurePath(waypoints);
-  return result.distance <= canvas.grid.distance;
+  const result = canvas?.grid?.measurePath
+    ? canvas.grid.measurePath(waypoints)
+    : { distance: Math.hypot(centerB.x - centerA.x, centerB.y - centerA.y) };
+  const range = maxRange !== undefined
+    ? Number(maxRange)
+    : Math.max(getTokenInteractionRange(tokenB), getTokenInteractionRange(tokenA));
+  const gridDist = canvas?.grid?.distance || 1;
+
+  if (result.spaces !== undefined) {
+    return result.spaces <= range || result.distance <= (gridDist * range);
+  }
+  return result.distance <= (gridDist * range);
 }
 
 /**

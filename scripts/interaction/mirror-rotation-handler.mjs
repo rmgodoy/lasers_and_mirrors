@@ -53,6 +53,16 @@ export function registerMirrorRotationHandler() {
  */
 export function refreshActiveHUD(changedToken) {
   if (!activeMirrorHUD || !activeToken) return;
+
+  // For non-GM players, automatically dismiss HUD if the player moves out of interaction range
+  if (!game.user.isGM) {
+    const playerToken = getPlayerToken();
+    if (!playerToken || !areTokensAdjacent(playerToken, activeToken)) {
+      _dismissHUD();
+      return;
+    }
+  }
+
   // Never disrupt active drag interaction
   if (activeMirrorHUD.dragging) return;
 
@@ -198,6 +208,18 @@ function _showHUD(rotatableToken) {
 /**
  * Dismiss and destroy the active MirrorHUD.
  */
+export function dismissActiveHUD() {
+  _dismissHUD();
+}
+
+/**
+ * Get the currently active token with an open HUD, if any.
+ * @returns {Token|null}
+ */
+export function getActiveHUDToken() {
+  return activeToken;
+}
+
 function _dismissHUD() {
   if (!activeMirrorHUD) return;
 

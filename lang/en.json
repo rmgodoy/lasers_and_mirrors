@@ -50,6 +50,7 @@
       "lightRadius": "Light Radius (Grids)",
       "providesVision": "Provides Direct Vision",
       "interactable": "Players Can Rotate",
+      "interactionRange": "Interaction Range (Squares)",
       "attachable": "Can Attach to Tokens",
       "limitRotation": "Limit Rotation Angle",
       "minDeg": "Min Angle (°)",
@@ -85,7 +86,7 @@
       "configureTrigger": "Configure Trigger"
     },
     "notify": {
-      "notAdjacent": "You must be adjacent to interact with this token.",
+      "notAdjacent": "You must be within interaction range to interact with this object.",
       "noPlayerToken": "You need a player token to interact with this object.",
       "laserAttached": "Laser attached to token.",
       "laserDetached": "Laser detached.",

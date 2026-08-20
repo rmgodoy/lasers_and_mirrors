@@ -47,6 +47,13 @@ export class LaserActorModel extends foundry.abstract.TypeDataModel {
       providesVision: new fields.BooleanField({ initial: false }),
 
       interactable: new fields.BooleanField({ initial: false }),
+      interactionRange: new fields.NumberField({
+        required: true,
+        initial: 1,
+        min: 1,
+        max: 50,
+        step: 1,
+      }),
       attachable: new fields.BooleanField({ initial: false }),
       attachedToTokenId: new fields.StringField({
         required: false,

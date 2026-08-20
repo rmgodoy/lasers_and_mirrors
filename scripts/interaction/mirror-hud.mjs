@@ -21,6 +21,7 @@ import {
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 import { isAngleInArc, clampAngleToArc, angularDistance, normalizeAngle } from "../utils/angle-limits.mjs";
+import { dismissActiveHUD } from "./mirror-rotation-handler.mjs";
 
 /**
  * Format an angle in degrees for display:
@@ -756,6 +757,7 @@ export class MirrorHUD extends PIXI.Container {
     } else {
       if (!game.user.isGM && !areTokensAdjacent(playerToken, this.token)) {
         ui.notifications.warn(game.i18n.localize("LAM.notify.notAdjacent"));
+        dismissActiveHUD();
         return;
       }
       if (isLaserToken) {
@@ -895,6 +897,14 @@ export class MirrorHUD extends PIXI.Container {
     
     // Final sync
     this._emitUpdate(this.currentOrientation);
+
+    // If non-GM user is out of interaction range, dismiss HUD
+    if (!game.user.isGM) {
+      const playerToken = getPlayerToken();
+      if (!playerToken || !areTokensAdjacent(playerToken, this.token)) {
+        dismissActiveHUD();
+      }
+    }
   }
 
   _applyLocalRotation(orientation) {

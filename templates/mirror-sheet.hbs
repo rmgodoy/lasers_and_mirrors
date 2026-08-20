@@ -23,6 +23,11 @@
   </div>
 
   <div class="form-group">
+    <label for="interactionRange">{{localize "LAM.labels.interactionRange"}}</label>
+    <input type="number" name="interactionRange" min="1" max="50" step="1" value="{{interactionRange}}"/>
+  </div>
+
+  <div class="form-group">
     <label for="attachable">{{localize "LAM.labels.attachable"}}</label>
     <input type="checkbox" name="attachable" {{checked attachable}}/>
   </div>

@@ -60,6 +60,7 @@ export class MirrorTokenConfigSheet extends HandlebarsApplicationMixin(Applicati
       orientation: currentOrientation,
       twoSided: data.twoSided ?? false,
       interactable: data.interactable ?? true,
+      interactionRange: data.interactionRange ?? 1,
       attachable: data.attachable ?? false,
       limitRotation: data.limitRotation ?? false,
       minDeg,
@@ -153,6 +154,7 @@ export class MirrorTokenConfigSheet extends HandlebarsApplicationMixin(Applicati
     if ("orientation" in data) data.orientation = Number(data.orientation);
     data.twoSided = Boolean(data.twoSided);
     data.interactable = Boolean(data.interactable);
+    if ("interactionRange" in data) data.interactionRange = Math.max(1, Number(data.interactionRange) || 1);
     data.attachable = Boolean(data.attachable);
     data.limitRotation = Boolean(data.limitRotation);
     if ("minDeg" in data) data.minDeg = Number(data.minDeg);

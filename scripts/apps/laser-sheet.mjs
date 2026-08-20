@@ -64,6 +64,7 @@ export class LaserTokenConfigSheet extends HandlebarsApplicationMixin(Applicatio
       lightRadius: data.lightRadius ?? 1,
       providesVision: data.providesVision ?? false,
       interactable: data.interactable,
+      interactionRange: data.interactionRange ?? 1,
       attachable: data.attachable,
       limitRotation: data.limitRotation ?? false,
       minDeg,
@@ -157,6 +158,7 @@ export class LaserTokenConfigSheet extends HandlebarsApplicationMixin(Applicatio
     data.emitLight = Boolean(data.emitLight);
     data.providesVision = Boolean(data.providesVision);
     data.interactable = Boolean(data.interactable);
+    if ("interactionRange" in data) data.interactionRange = Math.max(1, Number(data.interactionRange) || 1);
     data.attachable = Boolean(data.attachable);
     data.limitRotation = Boolean(data.limitRotation);
     data.width = Number(data.width);
