@@ -1,6 +1,8 @@
 import { isMirror } from "../mirror-data.mjs";
+import { isLaser, getLaserData } from "../laser-data.mjs";
 import { MirrorHUD } from "./mirror-hud.mjs";
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
+
 
 /**
  * Active MirrorHUD instance, if any.
@@ -99,29 +101,40 @@ function _onPointerUp(event) {
   const worldPos = _getCanvasWorldCoordinates(event.clientX, event.clientY);
   if (!worldPos) return;
 
-  const mirrorToken = _getMirrorTokenAt(worldPos);
+  const rotatableToken = _getRotatableTokenAt(worldPos);
 
-  if (mirrorToken) {
-    // If clicking the same mirror that currently has the HUD open, toggle it off (dismiss)
-    if (activeToken && activeToken.id === mirrorToken.id) {
+  if (rotatableToken) {
+    // If clicking the same token that currently has the HUD open, toggle it off (dismiss)
+    if (activeToken && activeToken.id === rotatableToken.id) {
       _dismissHUD();
       return;
+    }
+
+    const tokenDoc = rotatableToken.document;
+    const isLaserToken = isLaser(tokenDoc);
+
+    // If it's a laser and not GM, verify interactable flag
+    if (isLaserToken && !game.user.isGM) {
+      const laserData = getLaserData(tokenDoc);
+      if (!laserData.interactable) {
+        return;
+      }
     }
 
     // Check adjacency for non-GM users
     if (!game.user.isGM) {
       const playerToken = getPlayerToken();
-      if (!playerToken || !areTokensAdjacent(playerToken, mirrorToken)) {
+      if (!playerToken || !areTokensAdjacent(playerToken, rotatableToken)) {
         ui.notifications.warn(game.i18n.localize("LAM.notify.notAdjacent"));
         return;
       }
     }
 
-    // Dismiss any previous HUD and show on the new mirror token
+    // Dismiss any previous HUD and show on the new rotatable token
     _dismissHUD();
-    _showHUD(mirrorToken);
+    _showHUD(rotatableToken);
   } else {
-    // Right-clicked anywhere else (empty canvas or non-mirror token) -> dismiss HUD
+    // Right-clicked anywhere else (empty canvas or non-rotatable token) -> dismiss HUD
     if (activeMirrorHUD) {
       _dismissHUD();
     }
@@ -131,13 +144,13 @@ function _onPointerUp(event) {
 /**
  * Show the MirrorHUD on a token.
  * Added to canvas.interface so interaction is not clipped by token bounding box.
- * @param {Token} mirrorToken
+ * @param {Token} rotatableToken
  */
-function _showHUD(mirrorToken) {
-  activeToken = mirrorToken;
-  activeMirrorHUD = new MirrorHUD(mirrorToken);
+function _showHUD(rotatableToken) {
+  activeToken = rotatableToken;
+  activeMirrorHUD = new MirrorHUD(rotatableToken);
   activeMirrorHUD.draw();
-  activeMirrorHUD.position.set(mirrorToken.x, mirrorToken.y);
+  activeMirrorHUD.position.set(rotatableToken.x, rotatableToken.y);
   
   const parent = canvas.interface ?? canvas.stage;
   parent.addChild(activeMirrorHUD);
@@ -185,17 +198,17 @@ function _getCanvasWorldCoordinates(clientX, clientY) {
 }
 
 /**
- * Find a mirror token at the given canvas world position.
+ * Find a mirror or laser token at the given canvas world position.
  * Checks topmost tokens first.
  * @param {{ x: number, y: number }} pos - canvas world coordinates
  * @returns {Token|null}
  */
-function _getMirrorTokenAt(pos) {
+function _getRotatableTokenAt(pos) {
   if (!canvas?.tokens?.placeables) return null;
 
   const tokens = [...canvas.tokens.placeables].reverse();
   for (const token of tokens) {
-    if (!isMirror(token.document)) continue;
+    if (!isMirror(token.document) && !isLaser(token.document)) continue;
     const x = token.x ?? token.document.x;
     const y = token.y ?? token.document.y;
     const w = token.w || (token.document.width * (canvas.grid?.size || 100));
@@ -206,3 +219,4 @@ function _getMirrorTokenAt(pos) {
   }
   return null;
 }
+

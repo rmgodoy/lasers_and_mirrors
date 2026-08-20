@@ -1,7 +1,9 @@
 import { MODULE_ID } from "../constants.mjs";
+import { isLaser, updateLaserData } from "../laser-data.mjs";
 import { updateMirrorData } from "../mirror-data.mjs";
-import { emitMirrorRotation } from "./socket-handler.mjs";
+import { emitMirrorRotation, emitRotateLaser } from "./socket-handler.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
+
 
 /**
  * A custom PIXI HUD for rotating mirrors.
@@ -266,18 +268,31 @@ export class MirrorHUD extends PIXI.Container {
   async _emitUpdate(orientation) {
     this._applyLocalRotation(orientation);
 
-    if (game.user.isGM) {
-      // GM can update directly
-      await updateMirrorData(this.token.document, { orientation });
+    if (isLaser(this.token.document)) {
+      if (game.user.isGM) {
+        await updateLaserData(this.token.document, { orientation });
+      } else {
+        emitRotateLaser(
+          this.token.document.parent.id,
+          this.token.document.id,
+          orientation
+        );
+      }
     } else {
-      // Non-GM: send via websocket for GM to process
-      emitMirrorRotation(
-        this.token.document.parent.id,
-        this.token.document.id,
-        orientation
-      );
+      if (game.user.isGM) {
+        // GM can update directly
+        await updateMirrorData(this.token.document, { orientation });
+      } else {
+        // Non-GM: send via websocket for GM to process
+        emitMirrorRotation(
+          this.token.document.parent.id,
+          this.token.document.id,
+          orientation
+        );
+      }
     }
   }
+
 
   /**
    * PIXI clear override for our custom structure.

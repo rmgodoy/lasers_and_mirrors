@@ -108,7 +108,7 @@ function onCreateToken(tokenDoc, options, userId) {
 function onPreUpdateToken(tokenDoc, changes, options, userId) {
   const user = game.users.get(userId);
   if (user?.isGM || game.user.isGM) return true;
-  if (!isMirror(tokenDoc)) return true;
+  if (!isMirror(tokenDoc) && !isLaser(tokenDoc)) return true;
 
   // Block position and rotation changes for non-GM users
   const blocked = ("x" in changes) || ("y" in changes) || ("rotation" in changes);
@@ -116,6 +116,7 @@ function onPreUpdateToken(tokenDoc, changes, options, userId) {
 
   return true;
 }
+
 
 /**
  * Called when any token document is updated.
@@ -201,8 +202,9 @@ function onRefreshToken(token, flags) {
  */
 function onControlToken(token, controlled) {
   if (game.user.isGM) return true;
-  if (controlled && isMirror(token.document)) return false;
+  if (controlled && (isMirror(token.document) || isLaser(token.document))) return false;
   return true;
 }
+
 
 

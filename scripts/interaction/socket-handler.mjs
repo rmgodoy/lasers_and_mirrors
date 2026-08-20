@@ -24,6 +24,9 @@ async function onSocketMessage(data) {
     case "rotateMirror":
       await handleRotateMirror(data);
       break;
+    case "rotateLaser":
+      await handleRotateLaser(data);
+      break;
     case "toggleLaser":
       await handleToggleLaser(data);
       break;
@@ -37,6 +40,22 @@ async function onSocketMessage(data) {
       console.warn(`${MODULE_ID} | Unknown socket action: ${data.action}`);
   }
 }
+
+/**
+ * Handle a rotateLaser socket request from a player.
+ * @param {object} data - { action, sceneId, tokenId, orientation }
+ */
+async function handleRotateLaser({ sceneId, tokenId, orientation }) {
+  const scene = game.scenes.get(sceneId);
+  if (!scene) return;
+
+  const tokenDoc = scene.tokens.get(tokenId);
+  if (!tokenDoc) return;
+
+  await updateLaserData(tokenDoc, { orientation });
+  refreshBeams();
+}
+
 
 /**
  * Handle a rotateMirror socket request from a player.
@@ -113,6 +132,22 @@ export function emitMirrorRotation(sceneId, tokenId, orientation) {
     orientation,
   });
 }
+
+/**
+ * Emit a laser rotation request via websocket.
+ * @param {string} sceneId
+ * @param {string} tokenId
+ * @param {number} orientation
+ */
+export function emitRotateLaser(sceneId, tokenId, orientation) {
+  game.socket.emit(SOCKET_NAME, {
+    action: "rotateLaser",
+    sceneId,
+    tokenId,
+    orientation,
+  });
+}
+
 
 /**
  * Emit a laser toggle request via websocket.
