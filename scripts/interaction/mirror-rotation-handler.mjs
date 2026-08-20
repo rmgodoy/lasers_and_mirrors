@@ -1,5 +1,5 @@
-import { isMirror, getMirrorData } from "../mirror-data.mjs";
-import { isLaser, getLaserData } from "../laser-data.mjs";
+import { isMirror, getMirrorData, getAllMirrors } from "../mirror-data.mjs";
+import { isLaser, getLaserData, getAllLasers } from "../laser-data.mjs";
 import { MirrorHUD } from "./mirror-hud.mjs";
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
 
@@ -44,6 +44,35 @@ export function registerMirrorRotationHandler() {
 
   // Also attach immediately if canvas is already ready
   if (canvas?.ready) _attachCanvasListeners();
+}
+
+/**
+ * Refresh active HUD position and orientation if it is open on the changed token
+ * or on a laser/mirror attached to the changed token.
+ * @param {TokenDocument|Token} changedToken
+ */
+export function refreshActiveHUD(changedToken) {
+  if (!activeMirrorHUD || !activeToken) return;
+  // Never disrupt active drag interaction
+  if (activeMirrorHUD.dragging) return;
+
+  const changedDoc = changedToken.document ?? changedToken;
+  const activeDoc = activeToken.document ?? activeToken;
+
+  // Direct match: the active token itself was updated
+  if (changedDoc.id === activeDoc.id) {
+    activeMirrorHUD.refresh();
+    return;
+  }
+
+  // Attached match: the active token is attached to the token that moved/rotated
+  const laserData = isLaser(activeDoc) ? getLaserData(activeDoc) : null;
+  const mirrorData = isMirror(activeDoc) ? getMirrorData(activeDoc) : null;
+  const attachedToId = laserData?.attachedToTokenId ?? mirrorData?.attachedToTokenId;
+
+  if (attachedToId && attachedToId === changedDoc.id) {
+    activeMirrorHUD.refresh();
+  }
 }
 
 /**
@@ -208,7 +237,8 @@ function _getCanvasWorldCoordinates(clientX, clientY) {
 }
 
 /**
- * Find a mirror or laser token at the given canvas world position.
+ * Find a mirror or laser token at the given canvas world position,
+ * or a carrier token that has an attached mirror or laser.
  * Checks topmost tokens first.
  * @param {{ x: number, y: number }} pos - canvas world coordinates
  * @returns {Token|null}
@@ -217,6 +247,8 @@ function _getRotatableTokenAt(pos) {
   if (!canvas?.tokens?.placeables) return null;
 
   const tokens = [...canvas.tokens.placeables].reverse();
+
+  // 1. Direct hit on a mirror or laser token
   for (const token of tokens) {
     if (!isMirror(token.document) && !isLaser(token.document)) continue;
     const x = token.x ?? token.document.x;
@@ -227,6 +259,32 @@ function _getRotatableTokenAt(pos) {
       return token;
     }
   }
+
+  // 2. Hit on a token that has an attached laser or mirror
+  for (const token of tokens) {
+    const x = token.x ?? token.document.x;
+    const y = token.y ?? token.document.y;
+    const w = token.w || (token.document.width * (canvas.grid?.size || 100));
+    const h = token.h || (token.document.height * (canvas.grid?.size || 100));
+    if (pos.x >= x && pos.x <= x + w && pos.y >= y && pos.y <= y + h) {
+      const attachedLaser = getAllLasers().find(l => {
+        const doc = l.document ?? l;
+        return getLaserData(doc).attachedToTokenId === token.id;
+      });
+      if (attachedLaser) {
+        return attachedLaser.object ?? canvas.tokens?.get(attachedLaser.id) ?? attachedLaser;
+      }
+
+      const attachedMirror = getAllMirrors().find(m => {
+        const doc = m.document ?? m;
+        return getMirrorData(doc).attachedToTokenId === token.id;
+      });
+      if (attachedMirror) {
+        return attachedMirror.object ?? canvas.tokens?.get(attachedMirror.id) ?? attachedMirror;
+      }
+    }
+  }
+
   return null;
 }
 

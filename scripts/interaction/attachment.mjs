@@ -116,7 +116,7 @@ export async function syncAttachedLasers(movedTokenDoc, changes) {
     }
 
     if (Object.keys(update).length > 0) {
-      await laserDoc.update(update);
+      await laserDoc.update(update, { animate: false });
     }
   }
 }
@@ -145,7 +145,7 @@ export async function syncAttachedMirrors(movedTokenDoc, changes) {
     }
 
     if (Object.keys(update).length > 0) {
-      await mirrorDoc.update(update);
+      await mirrorDoc.update(update, { animate: false });
     }
   }
 }

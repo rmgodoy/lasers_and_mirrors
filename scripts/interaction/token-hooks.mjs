@@ -6,6 +6,7 @@ import { isTrigger } from "../trigger-data.mjs";
 import { isModuleToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 import { syncAttachedObjects, handleTokenDeletion } from "./attachment.mjs";
+import { refreshActiveHUD } from "./mirror-rotation-handler.mjs";
 
 /**
  * Register all token-related hooks.
@@ -147,14 +148,8 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
   // Ensure mirror & laser token mesh visual angle is always in sync with rotation
   if ((isMirror(tokenDoc) || isLaser(tokenDoc)) && ("rotation" in changes || changes.flags?.[MODULE_ID])) {
     const token = tokenDoc.object ?? canvas.tokens?.get(tokenDoc.id);
-    if (token) {
-      const rot = changes.rotation ?? changes.flags?.[MODULE_ID]?.orientation ?? tokenDoc.rotation;
-      if (token.mesh) {
-        token.mesh.rotation = (rot * Math.PI) / 180;
-      }
-      if (token.renderFlags) {
-        token.renderFlags.set({ refreshRotation: true });
-      }
+    if (token?.renderFlags) {
+      token.renderFlags.set({ refreshRotation: true });
     }
   }
 
@@ -164,6 +159,9 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
   if (posChanged && !isLaser(tokenDoc) && !isMirror(tokenDoc)) {
     await syncAttachedObjects(tokenDoc, changes);
   }
+
+  // Refresh active HUD position/orientation if open on this token or an attached object
+  refreshActiveHUD(tokenDoc);
 
   // Refresh beams if flags changed, position/rotation changed, or if it's any module token
   const hasModuleFlagChange = Boolean(changes.flags?.[MODULE_ID]);
@@ -190,6 +188,7 @@ async function onDeleteToken(tokenDoc, options, userId) {
  * @param {object} flags
  */
 function onRefreshToken(token, flags) {
+  refreshActiveHUD(token);
   if (isModuleToken(token.document)) {
     refreshBeams();
   }

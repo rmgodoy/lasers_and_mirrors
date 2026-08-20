@@ -452,16 +452,13 @@ export class MirrorHUD extends PIXI.Container {
   }
 
   _applyLocalRotation(orientation) {
-    if (this.token.document) {
+    if (this.token?.document) {
       this.token.document.updateSource({ rotation: orientation });
       if (this.token.document.flags?.[MODULE_ID]) {
         this.token.document.flags[MODULE_ID].orientation = orientation;
       }
     }
-    if (this.token.mesh) {
-      this.token.mesh.rotation = (orientation * Math.PI) / 180;
-    }
-    if (this.token.renderFlags) {
+    if (this.token?.renderFlags) {
       this.token.renderFlags.set({ refreshRotation: true });
     }
     refreshBeams();
