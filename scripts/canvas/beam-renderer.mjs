@@ -40,13 +40,9 @@ export class BeamRenderer {
       for (const seg of segments) {
         const color = this._hexToNumber(seg.color);
         glowGraphics
+          .lineStyle(seg.width * 3, color, opacity * 0.2 * seg.intensity)
           .moveTo(seg.start.x, seg.start.y)
-          .lineTo(seg.end.x, seg.end.y)
-          .stroke({
-            width: seg.width * 3,
-            color: color,
-            alpha: opacity * 0.2 * seg.intensity
-          });
+          .lineTo(seg.end.x, seg.end.y);
       }
       this.container.addChild(glowGraphics);
     }
@@ -56,13 +52,9 @@ export class BeamRenderer {
     for (const seg of segments) {
       const color = this._hexToNumber(seg.color);
       mainGraphics
+        .lineStyle(seg.width, color, opacity * seg.intensity)
         .moveTo(seg.start.x, seg.start.y)
-        .lineTo(seg.end.x, seg.end.y)
-        .stroke({
-          width: seg.width,
-          color: color,
-          alpha: opacity * seg.intensity
-        });
+        .lineTo(seg.end.x, seg.end.y);
     }
     this.container.addChild(mainGraphics);
 
@@ -70,13 +62,9 @@ export class BeamRenderer {
     const coreGraphics = new PIXI.Graphics();
     for (const seg of segments) {
       coreGraphics
+        .lineStyle(Math.max(1, seg.width * 0.3), 0xffffff, opacity * seg.intensity * 0.6)
         .moveTo(seg.start.x, seg.start.y)
-        .lineTo(seg.end.x, seg.end.y)
-        .stroke({
-          width: Math.max(1, seg.width * 0.3),
-          color: 0xffffff,
-          alpha: opacity * seg.intensity * 0.6
-        });
+        .lineTo(seg.end.x, seg.end.y);
     }
     this.container.addChild(coreGraphics);
   }
