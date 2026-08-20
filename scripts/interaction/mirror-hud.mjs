@@ -22,9 +22,21 @@ import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 /**
+ * Format an angle in degrees for display:
+ * Shows integer angles as e.g. "45°", and decimal angles as e.g. "45.2°".
+ * @param {number} angle
+ * @returns {string}
+ */
+export function formatAngle(angle) {
+  const norm = (angle % 360 + 360) % 360;
+  const rounded = Number(norm.toFixed(1));
+  return Number.isInteger(rounded) ? `${rounded}` : `${rounded.toFixed(1)}`;
+}
+
+/**
  * A custom PIXI HUD for interacting with mirrors and lasers.
- * Drawn as a circular track around the token with a draggable knob (for rotation)
- * and an optional Hand action button (for picking up / dropping attachable lasers and mirrors).
+ * Drawn as a circular track around the token with a draggable knob (for rotation),
+ * real-time angle/modifier badge, and an optional Hand action button (for picking up / dropping attachable lasers and mirrors).
  */
 export class MirrorHUD extends PIXI.Container {
   constructor(token) {
@@ -62,25 +74,150 @@ export class MirrorHUD extends PIXI.Container {
     this.attachButton.addChild(this.attachButtonBg);
     this.attachButton.addChild(this.attachButtonIcon);
     this.attachButton.addChild(this.attachButtonLabel);
+
+    // Angle Badge Container
+    this.badgeContainer = new PIXI.Container();
+    this.badgeBg = new PIXI.Graphics();
+    this.badgeAngleText = new PIXI.Text("0°", {
+      fontFamily: ["Signika", "Arial", "sans-serif"],
+      fontSize: 13,
+      fill: 0xffffff,
+      stroke: 0x000000,
+      strokeThickness: 3,
+      fontWeight: "bold",
+      align: "center",
+    });
+    this.badgeAngleText.anchor.set(0.5, 0.5);
+    this.badgeAngleText.position.set(0, -5);
+
+    this.badgeModeText = new PIXI.Text("1° STEP", {
+      fontFamily: ["Signika", "Arial", "sans-serif"],
+      fontSize: 9,
+      fill: 0x88ccdd,
+      stroke: 0x000000,
+      strokeThickness: 2,
+      fontWeight: "bold",
+      align: "center",
+    });
+    this.badgeModeText.anchor.set(0.5, 0.5);
+    this.badgeModeText.position.set(0, 7);
+
+    this.badgeContainer.addChild(this.badgeBg);
+    this.badgeContainer.addChild(this.badgeAngleText);
+    this.badgeContainer.addChild(this.badgeModeText);
     
     this.addChild(this.track);
     this.addChild(this.pointerLine);
     this.addChild(this.knob);
     this.addChild(this.attachButton);
+    this.addChild(this.badgeContainer);
 
     this.dragging = false;
     this.currentOrientation = 0;
+    this._lastPointerAngle = 0;
+    this._currentVirtualAngle = 0;
+    this._lastDragEvent = null;
 
     // Throttle updates to ~10 per second for real-time syncing
     this.throttledUpdate = foundry.utils.throttle(this._emitUpdate.bind(this), 100);
     
     this._setupInteraction();
+    this._setupKeyListeners();
   }
 
   _getPixelSize() {
     const w = this.token.w || (this.token.document.width * (canvas.grid?.size || 100));
     const h = this.token.h || (this.token.document.height * (canvas.grid?.size || 100));
     return { width: w, height: h };
+  }
+
+  /**
+   * Modifier detection helpers supporting Windows and Mac.
+   */
+  _isShiftHeld(event) {
+    if (event?.shiftKey || event?.data?.originalEvent?.shiftKey || event?.nativeEvent?.shiftKey) return true;
+    const KM = foundry.helpers?.interaction?.KeyboardManager ?? globalThis.KeyboardManager;
+    if (game.keyboard?.isModifierActive?.(KM?.MODIFIER_KEYS?.SHIFT ?? "Shift")) return true;
+    return this._keysDown?.has("Shift") ?? false;
+  }
+
+  _isCtrlHeld(event) {
+    if (
+      event?.ctrlKey ||
+      event?.metaKey ||
+      event?.data?.originalEvent?.ctrlKey ||
+      event?.data?.originalEvent?.metaKey ||
+      event?.nativeEvent?.ctrlKey ||
+      event?.nativeEvent?.metaKey
+    ) {
+      return true;
+    }
+    const KM = foundry.helpers?.interaction?.KeyboardManager ?? globalThis.KeyboardManager;
+    if (
+      game.keyboard?.isModifierActive?.(KM?.MODIFIER_KEYS?.CONTROL ?? "Control") ||
+      game.keyboard?.isModifierActive?.(KM?.MODIFIER_KEYS?.ALT ?? "Alt")
+    ) {
+      return true;
+    }
+    return (this._keysDown?.has("Control") || this._keysDown?.has("Meta")) ?? false;
+  }
+
+  /**
+   * Listen to key presses during HUD lifetime for dynamic modifier feedback.
+   */
+  _setupKeyListeners() {
+    this._keysDown = new Set();
+    this._onKeyDown = (e) => {
+      this._keysDown.add(e.key);
+      if (e.key === "Shift" || e.key === "Control" || e.key === "Meta" || e.key === "Alt") {
+        this._onModifierChange(e);
+      }
+    };
+    this._onKeyUp = (e) => {
+      this._keysDown.delete(e.key);
+      if (e.key === "Shift" || e.key === "Control" || e.key === "Meta" || e.key === "Alt") {
+        this._onModifierChange(e);
+      }
+    };
+    window.addEventListener("keydown", this._onKeyDown);
+    window.addEventListener("keyup", this._onKeyUp);
+  }
+
+  _removeKeyListeners() {
+    if (this._onKeyDown) window.removeEventListener("keydown", this._onKeyDown);
+    if (this._onKeyUp) window.removeEventListener("keyup", this._onKeyUp);
+    this._keysDown?.clear();
+  }
+
+  /**
+   * Handle modifier keypress state transitions dynamically.
+   */
+  _onModifierChange(event) {
+    const isShift = this._isShiftHeld(event);
+    const isCtrl = this._isCtrlHeld(event);
+
+    if (this.dragging) {
+      if (isCtrl) {
+        // Snap to nearest 15°
+        const snapped = Math.round(this.currentOrientation / 15) * 15;
+        const normalized = (snapped % 360 + 360) % 360;
+        this.currentOrientation = normalized;
+        this._currentVirtualAngle = normalized;
+        this._updateVisuals(this.currentOrientation, false, true);
+        this._applyLocalRotation(this.currentOrientation);
+        this.throttledUpdate(this.currentOrientation);
+      } else if (isShift) {
+        // Switch to geared micro mode anchored at current orientation
+        this._currentVirtualAngle = this.currentOrientation;
+        this._updateVisuals(this.currentOrientation, true, false);
+      } else {
+        // Return to normal 1° 1:1 tracking anchored at current orientation
+        this._currentVirtualAngle = this.currentOrientation;
+        this._updateVisuals(this.currentOrientation, false, false);
+      }
+    } else {
+      this._updateBadge(this.currentOrientation, isShift, isCtrl);
+    }
   }
 
   /**
@@ -113,24 +250,15 @@ export class MirrorHUD extends PIXI.Container {
       this.track.visible = true;
       this.pointerLine.visible = true;
       this.knob.visible = true;
+      this.badgeContainer.visible = true;
 
-      // Interactive circular track
-      this.track.clear();
-      // Transparent wide stroke for easy clicking/hovering
-      this.track.lineStyle(28, 0xffffff, 0.001);
-      this.track.drawCircle(cx, cy, this.radius);
-      // Visible track ring
-      this.track.lineStyle(3, 0x00e5ff, 0.4);
-      this.track.drawCircle(cx, cy, this.radius);
-      // Subtle outer glow ring
-      this.track.lineStyle(1, 0xffffff, 0.2);
-      this.track.drawCircle(cx, cy, this.radius + 3);
-
+      this._drawTrack();
       this._drawKnob(false);
     } else {
       this.track.visible = false;
       this.pointerLine.visible = false;
       this.knob.visible = false;
+      this.badgeContainer.visible = false;
     }
 
     if (canAttach) {
@@ -143,6 +271,64 @@ export class MirrorHUD extends PIXI.Container {
     
     this.refresh();
     return this;
+  }
+
+  /**
+   * Draw the interactive circular track with 15° and 45°/90° tick marks.
+   */
+  _drawTrack() {
+    const bounds = this._getPixelSize();
+    const cx = bounds.width / 2;
+    const cy = bounds.height / 2;
+
+    this.track.clear();
+
+    // 1. Transparent wide hit stroke for easy clicking/dragging anywhere on ring
+    this.track.lineStyle(28, 0xffffff, 0.001);
+    this.track.drawCircle(cx, cy, this.radius);
+
+    // 2. Outer and inner subtle track borders
+    this.track.lineStyle(1, 0x00e5ff, 0.2);
+    this.track.drawCircle(cx, cy, this.radius + 5);
+    this.track.drawCircle(cx, cy, this.radius - 5);
+
+    // 3. Main track ring
+    this.track.lineStyle(2.5, 0x00e5ff, 0.45);
+    this.track.drawCircle(cx, cy, this.radius);
+
+    // 4. Tick marks every 15 degrees around the circle
+    for (let deg = 0; deg < 360; deg += 15) {
+      // Convert Foundry rotation deg to math angle (0° = South, 90° = West...)
+      const rad = ((deg + 90) * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+
+      let tickInner = 3;
+      let tickOuter = 3;
+      let tickWidth = 1;
+      let tickAlpha = 0.4;
+      let tickColor = 0x00e5ff;
+
+      if (deg % 90 === 0) {
+        // Major cardinal (0, 90, 180, 270)
+        tickInner = 6;
+        tickOuter = 6;
+        tickWidth = 2;
+        tickAlpha = 0.95;
+        tickColor = 0xffffff;
+      } else if (deg % 45 === 0) {
+        // Semi-major (45, 135, 225, 315)
+        tickInner = 5;
+        tickOuter = 5;
+        tickWidth = 1.5;
+        tickAlpha = 0.75;
+        tickColor = 0x66ffff;
+      }
+
+      this.track.lineStyle(tickWidth, tickColor, tickAlpha);
+      this.track.moveTo(cx + (this.radius - tickInner) * cos, cy + (this.radius - tickInner) * sin);
+      this.track.lineTo(cx + (this.radius + tickOuter) * cos, cy + (this.radius + tickOuter) * sin);
+    }
   }
 
   /**
@@ -211,6 +397,77 @@ export class MirrorHUD extends PIXI.Container {
     this.attachButton.hitArea = new PIXI.Circle(0, 0, 26);
   }
 
+  /**
+   * Draw and update the real-time angle badge.
+   * @param {number} orientation
+   * @param {boolean} isShift
+   * @param {boolean} isCtrl
+   */
+  _updateBadge(orientation, isShift = false, isCtrl = false) {
+    if (!this.badgeContainer.visible) return;
+
+    const bounds = this._getPixelSize();
+    const cx = bounds.width / 2;
+    const cy = bounds.height / 2;
+    const badgeY = cy + this.radius + 24;
+
+    this.badgeContainer.position.set(cx, badgeY);
+
+    const formatted = formatAngle(orientation);
+    this.badgeAngleText.text = `${formatted}°`;
+
+    const borderColor = isCtrl ? 0xffb74d : (isShift ? 0x66ffaa : 0x00e5ff);
+    const modeText = isCtrl ? "CTRL: 15° SNAP" : (isShift ? "SHIFT: 0.2° MICRO" : "1° STEP");
+    const modeColor = isCtrl ? 0xffb74d : (isShift ? 0x66ffaa : 0x88ccdd);
+
+    this.badgeModeText.text = modeText;
+    this.badgeModeText.style.fill = modeColor;
+
+    // Draw badge background box
+    const bw = 96;
+    const bh = 34;
+    this.badgeBg.clear();
+    // Shadow / glow
+    this.badgeBg.beginFill(0x000000, 0.4);
+    this.badgeBg.drawRoundedRect(-bw / 2 - 1, -bh / 2 - 1, bw + 2, bh + 2, 7);
+    this.badgeBg.endFill();
+
+    // Main box
+    this.badgeBg.beginFill(0x0d1522, 0.92);
+    this.badgeBg.lineStyle(1.5, borderColor, 0.85);
+    this.badgeBg.drawRoundedRect(-bw / 2, -bh / 2, bw, bh, 6);
+    this.badgeBg.endFill();
+  }
+
+  /**
+   * Update visual elements (knob position, pointer line, angle badge).
+   */
+  _updateVisuals(orientation, isShift = false, isCtrl = false) {
+    const bounds = this._getPixelSize();
+    const cx = bounds.width / 2;
+    const cy = bounds.height / 2;
+
+    // Convert Foundry rotation to math angle
+    const mathRad = ((orientation + 90) * Math.PI) / 180;
+    const kx = cx + this.radius * Math.cos(mathRad);
+    const ky = cy + this.radius * Math.sin(mathRad);
+
+    this.knob.x = kx;
+    this.knob.y = ky;
+
+    // Update guide line with mode-tinted theme
+    this.pointerLine.clear();
+    const lineColor = isCtrl ? 0xffb74d : (isShift ? 0x66ffaa : 0x00e5ff);
+    this.pointerLine.lineStyle(1.5, lineColor, 0.5);
+    this.pointerLine.moveTo(cx, cy);
+    this.pointerLine.lineTo(kx, ky);
+    this.pointerLine.beginFill(lineColor, 0.7);
+    this.pointerLine.drawCircle(cx, cy, 3);
+    this.pointerLine.endFill();
+
+    // Update badge
+    this._updateBadge(orientation, isShift, isCtrl);
+  }
 
   /**
    * Update the knob's position, guide line, and the attach button.
@@ -246,26 +503,12 @@ export class MirrorHUD extends PIXI.Container {
     if (this.dragging) return; // Don't override while dragging
 
     const targetOrientation = orientation !== undefined ? orientation : (this.token.document.rotation ?? 0);
-    this.currentOrientation = targetOrientation;
+    this.currentOrientation = Number(((targetOrientation % 360 + 360) % 360).toFixed(1));
+    this._currentVirtualAngle = this.currentOrientation;
     
-    // Convert Foundry rotation (0° = South, 90° = West) to math angle
-    const mathRad = ((targetOrientation + 90) * Math.PI) / 180;
-    
-    const kx = cx + this.radius * Math.cos(mathRad);
-    const ky = cy + this.radius * Math.sin(mathRad);
-
-    this.knob.x = kx;
-    this.knob.y = ky;
-
-    // Draw directional guide line from center to knob
-    this.pointerLine.clear();
-    this.pointerLine.lineStyle(1.5, 0x00e5ff, 0.4);
-    this.pointerLine.moveTo(cx, cy);
-    this.pointerLine.lineTo(kx, ky);
-    // Center point indicator
-    this.pointerLine.beginFill(0x00e5ff, 0.6);
-    this.pointerLine.drawCircle(cx, cy, 3);
-    this.pointerLine.endFill();
+    const isShift = this._isShiftHeld();
+    const isCtrl = this._isCtrlHeld();
+    this._updateVisuals(this.currentOrientation, isShift, isCtrl);
   }
 
   _setupInteraction() {
@@ -280,13 +523,27 @@ export class MirrorHUD extends PIXI.Container {
       if (!this.dragging) this._drawKnob(false);
     });
 
-    // Track interaction (clicking anywhere on the circular ring snaps & begins drag)
+    // Track interaction (clicking anywhere on the circular ring begins drag)
     this.track.interactive = true;
     this.track.eventMode = "static";
     this.track.cursor = "pointer";
     this.track.on("pointerdown", (event) => {
+      const isShift = this._isShiftHeld(event);
+      const isCtrl = this._isCtrlHeld(event);
+      const clickAngle = this._getPointerFoundryAngle(event);
+
+      if (!isShift) {
+        // Normal or Ctrl: snap/jump to clicked angle
+        let newAngle = isCtrl ? Math.round(clickAngle / 15) * 15 : Math.round(clickAngle);
+        newAngle = (newAngle % 360 + 360) % 360;
+        if (newAngle >= 360) newAngle = 0;
+        this.currentOrientation = newAngle;
+        this._currentVirtualAngle = newAngle;
+        this._applyLocalRotation(newAngle);
+        this.throttledUpdate(newAngle);
+      }
       this._onDragStart(event);
-      this._onDragMove(event);
+      this._updateVisuals(this.currentOrientation, isShift, isCtrl);
     });
 
     // Attach / Pick-up button interaction
@@ -361,32 +618,10 @@ export class MirrorHUD extends PIXI.Container {
     this._drawAttachButton(false);
   }
 
-
-  _onDragStart(event) {
-    event.stopPropagation?.();
-    if (event.data?.originalEvent) {
-      event.data.originalEvent.stopPropagation?.();
-    }
-    
-    this.dragging = true;
-    this.knob.cursor = "grabbing";
-    this._drawKnob(true);
-
-    // Bind global move and up handlers to canvas stage and window
-    this._stageMoveHandler = this._onDragMove.bind(this);
-    this._stageUpHandler = this._onDragEnd.bind(this);
-
-    canvas.stage?.on("pointermove", this._stageMoveHandler);
-    canvas.stage?.on("pointerup", this._stageUpHandler);
-    canvas.stage?.on("pointerupoutside", this._stageUpHandler);
-    window.addEventListener("pointerup", this._stageUpHandler, { once: true });
-  }
-
-  _onDragMove(event) {
-    if (!this.dragging) return;
-    event.stopPropagation?.();
-
-    // Get pointer position in local HUD coordinates
+  /**
+   * Convert pointer event position to Foundry rotation angle in degrees.
+   */
+  _getPointerFoundryAngle(event) {
     let globalPos = event.global ?? event.data?.global;
     if (!globalPos && event.clientX !== undefined) {
       globalPos = canvas.stage.toLocal(new PIXI.Point(event.clientX, event.clientY));
@@ -400,42 +635,86 @@ export class MirrorHUD extends PIXI.Container {
     const dx = newPosition.x - cx;
     const dy = newPosition.y - cy;
     
-    // Math angle in radians
-    let mathAngle = Math.atan2(dy, dx);
+    // Math angle in degrees
+    const mathAngle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    // Convert to Foundry rotation (degrees clockwise from South: 0° = South, 90° = West, 180° = North, 270° = East)
+    let foundryAngle = mathAngle - 90;
+    return (foundryAngle % 360 + 360) % 360;
+  }
+
+  _onDragStart(event) {
+    event.stopPropagation?.();
+    if (event.data?.originalEvent) {
+      event.data.originalEvent.stopPropagation?.();
+    }
     
-    // Convert to Foundry rotation (degrees, clockwise from South)
-    let degrees = (mathAngle * 180) / Math.PI;
-    let foundryRotation = Math.round(degrees - 90);
-    if (foundryRotation < 0) foundryRotation += 360;
-    if (foundryRotation >= 360) foundryRotation %= 360;
-    
-    this.currentOrientation = foundryRotation;
+    this.dragging = true;
+    this.knob.cursor = "grabbing";
+    this._drawKnob(true);
 
-    // Snap knob visually
-    const snapRad = ((foundryRotation + 90) * Math.PI) / 180;
-    const kx = cx + this.radius * Math.cos(snapRad);
-    const ky = cy + this.radius * Math.sin(snapRad);
-    this.knob.x = kx;
-    this.knob.y = ky;
+    const pointerAngle = this._getPointerFoundryAngle(event);
+    this._lastPointerAngle = pointerAngle;
+    this._currentVirtualAngle = this.currentOrientation;
+    this._lastDragEvent = event;
 
-    // Update guide line
-    this.pointerLine.clear();
-    this.pointerLine.lineStyle(1.5, 0x00e5ff, 0.5);
-    this.pointerLine.moveTo(cx, cy);
-    this.pointerLine.lineTo(kx, ky);
-    this.pointerLine.beginFill(0x00e5ff, 0.7);
-    this.pointerLine.drawCircle(cx, cy, 3);
-    this.pointerLine.endFill();
+    // Bind global move and up handlers to canvas stage and window
+    this._stageMoveHandler = this._onDragMove.bind(this);
+    this._stageUpHandler = this._onDragEnd.bind(this);
 
-    // Real-time optimistic update of token sprite rotation and beams
-    this._applyLocalRotation(foundryRotation);
-    this.throttledUpdate(foundryRotation);
+    canvas.stage?.on("pointermove", this._stageMoveHandler);
+    canvas.stage?.on("pointerup", this._stageUpHandler);
+    canvas.stage?.on("pointerupoutside", this._stageUpHandler);
+    window.addEventListener("pointerup", this._stageUpHandler, { once: true });
+  }
+
+  _onDragMove(event) {
+    if (!this.dragging) return;
+    this._lastDragEvent = event;
+    event.stopPropagation?.();
+
+    const pointerAngle = this._getPointerFoundryAngle(event);
+    let delta = pointerAngle - this._lastPointerAngle;
+    // Shortest angular difference (-180 to +180)
+    while (delta < -180) delta += 360;
+    while (delta > 180) delta -= 360;
+    this._lastPointerAngle = pointerAngle;
+
+    const isShift = this._isShiftHeld(event);
+    const isCtrl = this._isCtrlHeld(event);
+
+    let steppedRotation;
+    if (isShift) {
+      // 5:1 gear reduction for high precision 0.2° micro-adjustment
+      this._currentVirtualAngle += delta * 0.2;
+      let normalized = (this._currentVirtualAngle % 360 + 360) % 360;
+      steppedRotation = Number((Math.round(normalized * 5) / 5).toFixed(1));
+    } else if (isCtrl) {
+      // 15° snap increment
+      this._currentVirtualAngle += delta;
+      let normalized = (this._currentVirtualAngle % 360 + 360) % 360;
+      steppedRotation = Math.round(normalized / 15) * 15;
+    } else {
+      // 1° normal increment
+      this._currentVirtualAngle += delta;
+      let normalized = (this._currentVirtualAngle % 360 + 360) % 360;
+      steppedRotation = Math.round(normalized);
+    }
+
+    if (steppedRotation >= 360) steppedRotation = 0;
+    if (steppedRotation < 0) steppedRotation = 0;
+
+    this.currentOrientation = steppedRotation;
+
+    this._updateVisuals(steppedRotation, isShift, isCtrl);
+    this._applyLocalRotation(steppedRotation);
+    this.throttledUpdate(steppedRotation);
   }
 
   _onDragEnd(event) {
     if (!this.dragging) return;
     event?.stopPropagation?.();
     this.dragging = false;
+    this._lastDragEvent = null;
     this.knob.cursor = "grab";
     this._drawKnob(false);
 
@@ -492,7 +771,6 @@ export class MirrorHUD extends PIXI.Container {
     }
   }
 
-
   /**
    * PIXI clear override for our custom structure.
    */
@@ -501,13 +779,14 @@ export class MirrorHUD extends PIXI.Container {
     this.pointerLine.clear();
     this.knob.clear();
     this.attachButtonBg.clear();
+    this.badgeBg.clear();
   }
-
 
   /**
    * Cleanup event listeners on destruction.
    */
   destroy(options) {
+    this._removeKeyListeners();
     if (this._stageMoveHandler) {
       canvas.stage?.off("pointermove", this._stageMoveHandler);
       canvas.stage?.off("pointerup", this._stageUpHandler);
@@ -518,4 +797,3 @@ export class MirrorHUD extends PIXI.Container {
     super.destroy(options);
   }
 }
-
