@@ -3,16 +3,22 @@ import { getMirrorData, updateMirrorData } from "../mirror-data.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const ItemSheetV2 = foundry.applications.sheets?.ItemSheetV2 ?? ApplicationV2;
 
-export class MirrorSheet extends HandlebarsApplicationMixin(ApplicationV2) {
+export class MirrorSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   /**
-   * @param {TokenDocument} tokenDoc - the token document to configure
+   * @param {TokenDocument|ItemDocument|object} docOrOptions
    * @param {object} options
    */
-  constructor(tokenDoc, options = {}) {
-    super(options);
-    this.tokenDoc = tokenDoc;
+  constructor(docOrOptions = {}, options = {}) {
+    let opts = options;
+    if (docOrOptions instanceof foundry.abstract.Document) {
+      opts = { ...options, document: docOrOptions };
+    } else {
+      opts = docOrOptions;
+    }
+    super(opts);
   }
 
   static DEFAULT_OPTIONS = {
@@ -43,7 +49,7 @@ export class MirrorSheet extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   async _prepareContext(options) {
-    const data = getMirrorData(this.tokenDoc);
+    const data = getMirrorData(this.document);
     return {
       color: data.color,
       width: data.width,
@@ -65,13 +71,13 @@ export class MirrorSheet extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle form submission — save mirror data back to token flags.
+   * Handle form submission — save mirror data back to document flags.
    */
   static async onSubmit(event, form, formData) {
     const data = formData.object;
     data.width = Number(data.width);
     data.orientation = Number(data.orientation);
-    await updateMirrorData(this.tokenDoc, data);
+    await updateMirrorData(this.document, data);
     refreshBeams();
   }
 }

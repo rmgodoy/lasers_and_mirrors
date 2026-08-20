@@ -2,6 +2,8 @@ import { MODULE_ID } from "../constants.mjs";
 import { BeamRenderer } from "./beam-renderer.mjs";
 import { traceAllBeams } from "../physics/ray-caster.mjs";
 
+const CanvasLayer = foundry.canvas.layers.CanvasLayer ?? globalThis.CanvasLayer;
+
 /**
  * Custom CanvasLayer that renders all laser beams.
  * Added to canvas.interface so beams draw above tokens.

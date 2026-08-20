@@ -3,16 +3,22 @@ import { getLaserData, updateLaserData } from "../laser-data.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const ItemSheetV2 = foundry.applications.sheets?.ItemSheetV2 ?? ApplicationV2;
 
-export class LaserSheet extends HandlebarsApplicationMixin(ApplicationV2) {
+export class LaserSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   /**
-   * @param {TokenDocument} tokenDoc - the token document to configure
+   * @param {TokenDocument|ItemDocument|object} docOrOptions
    * @param {object} options
    */
-  constructor(tokenDoc, options = {}) {
-    super(options);
-    this.tokenDoc = tokenDoc;
+  constructor(docOrOptions = {}, options = {}) {
+    let opts = options;
+    if (docOrOptions instanceof foundry.abstract.Document) {
+      opts = { ...options, document: docOrOptions };
+    } else {
+      opts = docOrOptions;
+    }
+    super(opts);
   }
 
   static DEFAULT_OPTIONS = {
@@ -43,7 +49,7 @@ export class LaserSheet extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   async _prepareContext(options) {
-    const data = getLaserData(this.tokenDoc);
+    const data = getLaserData(this.document);
     return {
       color: data.color,
       width: data.width,
@@ -79,7 +85,7 @@ export class LaserSheet extends HandlebarsApplicationMixin(ApplicationV2) {
     data.width = Number(data.width);
     data.range = Number(data.range);
     data.intensity = Number(data.intensity);
-    await updateLaserData(this.tokenDoc, data);
+    await updateLaserData(this.document, data);
     refreshBeams();
   }
 }

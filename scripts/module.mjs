@@ -3,6 +3,7 @@ import { registerSettings } from "./settings.mjs";
 import { initBeamLayer, refreshBeams } from "./canvas/beam-layer.mjs";
 import { registerTokenHooks } from "./interaction/token-hooks.mjs";
 import { registerHUDHooks } from "./interaction/hud-buttons.mjs";
+import { registerItemHooks } from "./interaction/item-hooks.mjs";
 
 /**
  * Module initialization — register settings and hooks.
@@ -19,6 +20,7 @@ Hooks.once("ready", () => {
   console.log(`${MODULE_ID} | Ready`);
   registerTokenHooks();
   registerHUDHooks();
+  registerItemHooks();
 });
 
 /**

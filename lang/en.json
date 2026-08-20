@@ -50,6 +50,22 @@
       "laserAttached": "Laser attached to target token.",
       "laserDetached": "Laser detached.",
       "laserToggled": "Laser state toggled."
+    },
+    "controls": {
+      "createLaser": "Create Laser Token",
+      "createMirror": "Create Mirror Token"
+    }
+  },
+  "TYPES": {
+    "Item": {
+      "laser": "Laser",
+      "mirror": "Mirror",
+      "LasersAndMirrors.laser": "Laser",
+      "LasersAndMirrors.mirror": "Mirror",
+      "LasersAndMirrors": {
+        "laser": "Laser",
+        "mirror": "Mirror"
+      }
     }
   }
 }

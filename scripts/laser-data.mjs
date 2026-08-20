@@ -1,4 +1,4 @@
-import { MODULE_ID, FLAGS, TYPES, LASER_DEFAULTS } from "../constants.mjs";
+import { MODULE_ID, FLAGS, TYPES, LASER_DEFAULTS } from "./constants.mjs";
 
 /**
  * Check if a token is a laser.
