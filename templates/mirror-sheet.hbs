@@ -1,6 +1,7 @@
 <div class="lasers-and-mirrors-sheet">
-  <h2>{{localize "LAM.sheets.mirror.title"}}</h2>
+  <h2>{{#if isGM}}{{localize "LAM.sheets.mirror.title"}}{{else}}{{localize "LAM.sheets.mirrorPlayer.title"}}{{/if}}</h2>
 
+  {{#if isGM}}
   <div class="form-group">
     <label for="color">{{localize "LAM.labels.color"}}</label>
     <input type="color" name="color" value="{{color}}"/>
@@ -10,12 +11,11 @@
     <label for="width">{{localize "LAM.labels.width"}}</label>
     <input type="number" name="width" min="0.5" max="5" step="0.5" value="{{width}}"/>
   </div>
+  {{/if}}
 
   <div class="form-group">
     <label for="orientation">{{localize "LAM.labels.orientation"}}</label>
     <input type="range" name="orientation" min="0" max="359" step="1" value="{{orientation}}"/>
     <span class="range-value">{{orientation}}°</span>
   </div>
-
-
 </div>

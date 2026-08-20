@@ -1,0 +1,147 @@
+import { MODULE_ID, ACTOR_TYPES, LASER_DEFAULTS, MIRROR_DEFAULTS } from "../constants.mjs";
+import { refreshBeams } from "../canvas/beam-layer.mjs";
+
+/**
+ * Register canvas-related Actor hooks: scene control buttons and actor pre-creation.
+ * Call once during module init.
+ */
+export function registerActorHooks() {
+  Hooks.on("getSceneControlButtons", onGetSceneControlButtons);
+  Hooks.on("preCreateActor", onPreCreateActor);
+}
+
+/**
+ * Pre-create hook for Actor documents.
+ * Automatically assigns default SVG textures, prototypeToken configuration,
+ * and default OWNER permissions for mirrors.
+ */
+function onPreCreateActor(actor, data, options, userId) {
+  if (actor.type === ACTOR_TYPES.LASER) {
+    const defaultImg = `modules/${MODULE_ID}/assets/laser-on.svg`;
+    const sysData = data.system ?? LASER_DEFAULTS;
+    const proto = {
+      texture: { src: defaultImg },
+      width: 1,
+      height: 1,
+      actorLink: false,
+      hidden: true,
+      flags: {
+        [MODULE_ID]: { ...LASER_DEFAULTS, ...sysData }
+      }
+    };
+    actor.updateSource({
+      img: data.img && data.img !== "icons/svg/mystery-man.svg" ? data.img : defaultImg,
+      prototypeToken: foundry.utils.mergeObject(proto, data.prototypeToken ?? {})
+    });
+  } else if (actor.type === ACTOR_TYPES.MIRROR) {
+    const defaultImg = `modules/${MODULE_ID}/assets/mirror.svg`;
+    const sysData = data.system ?? MIRROR_DEFAULTS;
+    const proto = {
+      texture: { src: defaultImg },
+      width: 1,
+      height: 1,
+      actorLink: false,
+      rotation: sysData.orientation ?? MIRROR_DEFAULTS.orientation,
+      flags: {
+        [MODULE_ID]: { ...MIRROR_DEFAULTS, ...sysData }
+      }
+    };
+    const ownership = {
+      default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER ?? 3,
+      ...(data.ownership ?? {})
+    };
+    actor.updateSource({
+      img: data.img && data.img !== "icons/svg/mystery-man.svg" ? data.img : defaultImg,
+      ownership: ownership,
+      prototypeToken: foundry.utils.mergeObject(proto, data.prototypeToken ?? {})
+    });
+  }
+}
+
+/**
+ * Inject 1-click creation tools into Token Controls canvas palette.
+ * Creates an Actor and drops a corresponding Actor-backed Token onto the canvas.
+ * @param {object|Array} controls
+ */
+function onGetSceneControlButtons(controls) {
+  let tokenControls;
+  if (Array.isArray(controls)) {
+    tokenControls = controls.find(c => c.name === "tokens" || c.name === "token");
+  } else if (controls && typeof controls === "object") {
+    tokenControls = controls.tokens ?? controls.token;
+  }
+
+  if (!tokenControls) return;
+
+  const tools = Array.isArray(tokenControls.tools) ? tokenControls.tools : null;
+  if (!tools) return;
+
+  tools.push({
+    name: "createLaser",
+    title: "LAM.controls.createLaser",
+    icon: "fas fa-lightbulb",
+    visible: true,
+    button: true,
+    onClick: async () => {
+      let laserActor = game.actors.find(a => a.type === ACTOR_TYPES.LASER && a.name === "Laser Default");
+      if (!laserActor) {
+        laserActor = await Actor.create({
+          name: "Laser Default",
+          type: ACTOR_TYPES.LASER,
+          img: `modules/${MODULE_ID}/assets/laser-on.svg`,
+          system: { ...LASER_DEFAULTS },
+        });
+      }
+
+      const point = canvas.grid.getTopLeftPoint(canvas.center);
+      await TokenDocument.create({
+        name: "Laser",
+        actorId: laserActor.id,
+        actorLink: false,
+        texture: { src: `modules/${MODULE_ID}/assets/laser-on.svg` },
+        x: point.x,
+        y: point.y,
+        width: 1,
+        height: 1,
+        hidden: true,
+        [`flags.${MODULE_ID}`]: { ...LASER_DEFAULTS, ...(laserActor.system ?? {}) },
+      }, { parent: canvas.scene });
+      refreshBeams();
+    },
+  });
+
+  tools.push({
+    name: "createMirror",
+    title: "LAM.controls.createMirror",
+    icon: "fas fa-shield-alt",
+    visible: true,
+    button: true,
+    onClick: async () => {
+      let mirrorActor = game.actors.find(a => a.type === ACTOR_TYPES.MIRROR && a.name === "Mirror Default");
+      if (!mirrorActor) {
+        mirrorActor = await Actor.create({
+          name: "Mirror Default",
+          type: ACTOR_TYPES.MIRROR,
+          img: `modules/${MODULE_ID}/assets/mirror.svg`,
+          system: { ...MIRROR_DEFAULTS },
+          ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER ?? 3 },
+        });
+      }
+
+      const point = canvas.grid.getTopLeftPoint(canvas.center);
+      await TokenDocument.create({
+        name: "Mirror",
+        actorId: mirrorActor.id,
+        actorLink: false,
+        texture: { src: `modules/${MODULE_ID}/assets/mirror.svg` },
+        x: point.x,
+        y: point.y,
+        width: 1,
+        height: 1,
+        rotation: mirrorActor.system?.orientation ?? MIRROR_DEFAULTS.orientation,
+        [`flags.${MODULE_ID}`]: { ...MIRROR_DEFAULTS, ...(mirrorActor.system ?? {}) },
+      }, { parent: canvas.scene });
+      refreshBeams();
+    },
+  });
+}

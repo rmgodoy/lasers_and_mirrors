@@ -42,7 +42,13 @@ export function areTokensAdjacent(tokenA, tokenB) {
  * @returns {Token|null}
  */
 export function getPlayerToken() {
-  return canvas.tokens.placeables.find(t => t.document.isOwner && t.actor?.hasPlayerOwner) ?? null;
+  if (game.user.character) {
+    const charToken = game.user.character.getActiveTokens()[0];
+    if (charToken) return charToken;
+  }
+  return canvas.tokens.controlled.find(t => !isModuleToken(t.document)) ??
+         canvas.tokens.placeables.find(t => t.document.isOwner && !isModuleToken(t.document)) ??
+         null;
 }
 
 /**

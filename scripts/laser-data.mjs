@@ -1,4 +1,4 @@
-import { MODULE_ID, FLAGS, TYPES, LASER_DEFAULTS } from "./constants.mjs";
+import { MODULE_ID, FLAGS, TYPES, ACTOR_TYPES, LASER_DEFAULTS } from "./constants.mjs";
 
 /**
  * Check if a token is a laser.
@@ -6,17 +6,20 @@ import { MODULE_ID, FLAGS, TYPES, LASER_DEFAULTS } from "./constants.mjs";
  * @returns {boolean}
  */
 export function isLaser(tokenDoc) {
-  return tokenDoc?.getFlag(MODULE_ID, FLAGS.TYPE) === TYPES.LASER;
+  if (!tokenDoc) return false;
+  return tokenDoc.getFlag(MODULE_ID, FLAGS.TYPE) === TYPES.LASER ||
+         tokenDoc.actor?.type === ACTOR_TYPES.LASER;
 }
 
 /**
- * Get all laser data from a token, merged with defaults.
+ * Get all laser data from a token (checking actor system or flags), merged with defaults.
  * @param {TokenDocument} tokenDoc
  * @returns {object} Full laser data object with defaults applied
  */
 export function getLaserData(tokenDoc) {
   const flags = tokenDoc?.flags?.[MODULE_ID] ?? {};
-  return foundry.utils.mergeObject({ ...LASER_DEFAULTS }, flags, { inplace: false });
+  const actorSystem = tokenDoc?.actor?.system?.toObject?.() ?? tokenDoc?.actor?.system ?? {};
+  return foundry.utils.mergeObject({ ...LASER_DEFAULTS }, { ...actorSystem, ...flags }, { inplace: false });
 }
 
 /**
@@ -29,7 +32,7 @@ export async function initLaser(tokenDoc) {
 }
 
 /**
- * Update one or more laser properties.
+ * Update one or more laser properties (syncing both flags and actor system if present).
  * @param {TokenDocument} tokenDoc
  * @param {object} changes - e.g. { color: "#00ff00", visible: false }
  * @returns {Promise}
@@ -45,6 +48,10 @@ export async function updateLaserData(tokenDoc, changes) {
       : `modules/${MODULE_ID}/assets/laser-off.svg`;
   }
   await tokenDoc.update(updateData);
+
+  if (tokenDoc.actor && tokenDoc.actor.type === ACTOR_TYPES.LASER) {
+    await tokenDoc.actor.update({ system: changes });
+  }
 }
 
 /**

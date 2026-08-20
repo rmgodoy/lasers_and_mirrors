@@ -1,8 +1,8 @@
 /**
- * TypeDataModel for Laser items.
- * Defines the schema stored in item.system for laser-type items.
+ * TypeDataModel for Laser actors.
+ * Defines the schema stored in actor.system for laser-type actors.
  */
-export class LaserItemModel extends foundry.abstract.TypeDataModel {
+export class LaserActorModel extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     const fields = foundry.data.fields;
     return {

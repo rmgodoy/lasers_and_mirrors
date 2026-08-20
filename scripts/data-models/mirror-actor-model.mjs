@@ -1,8 +1,8 @@
 /**
- * TypeDataModel for Mirror items.
- * Defines the schema stored in item.system for mirror-type items.
+ * TypeDataModel for Mirror actors.
+ * Defines the schema stored in actor.system for mirror-type actors.
  */
-export class MirrorItemModel extends foundry.abstract.TypeDataModel {
+export class MirrorActorModel extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     const fields = foundry.data.fields;
     return {

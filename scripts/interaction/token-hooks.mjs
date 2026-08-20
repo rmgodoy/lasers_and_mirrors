@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../constants.mjs";
+import { MODULE_ID, ACTOR_TYPES, LASER_DEFAULTS, MIRROR_DEFAULTS } from "../constants.mjs";
 import { isLaser } from "../laser-data.mjs";
 import { isMirror, getMirrorData, updateMirrorData } from "../mirror-data.mjs";
 import { isModuleToken } from "../utils/token-helpers.mjs";
@@ -10,9 +10,70 @@ import { syncAttachedLasers, handleTokenDeletion } from "./attachment.mjs";
  * Call this once during module init.
  */
 export function registerTokenHooks() {
+  Hooks.on("preCreateToken", onPreCreateToken);
+  Hooks.on("createToken", onCreateToken);
   Hooks.on("updateToken", onUpdateToken);
   Hooks.on("deleteToken", onDeleteToken);
   Hooks.on("refreshToken", onRefreshToken);
+}
+
+/**
+ * Pre-create hook for Token documents.
+ * Ensures mirror and laser tokens placed on canvas have correct defaults.
+ * @param {TokenDocument} tokenDoc
+ * @param {object} data
+ * @param {object} options
+ * @param {string} userId
+ */
+function onPreCreateToken(tokenDoc, data, options, userId) {
+  const actor = tokenDoc.actor;
+  if (!actor) return;
+
+  if (actor.type === ACTOR_TYPES.MIRROR) {
+    const sys = actor.system ?? MIRROR_DEFAULTS;
+    const defaultImg = `modules/${MODULE_ID}/assets/mirror.svg`;
+    const flags = {
+      ...MIRROR_DEFAULTS,
+      ...sys,
+      ...(data.flags?.[MODULE_ID] ?? {})
+    };
+    const update = {
+      [`flags.${MODULE_ID}`]: flags,
+      rotation: data.rotation ?? sys.orientation ?? MIRROR_DEFAULTS.orientation,
+    };
+    if (!data.texture?.src || data.texture.src === "icons/svg/mystery-man.svg") {
+      update["texture.src"] = actor.img && actor.img !== "icons/svg/mystery-man.svg" ? actor.img : defaultImg;
+    }
+    tokenDoc.updateSource(update);
+  } else if (actor.type === ACTOR_TYPES.LASER) {
+    const sys = actor.system ?? LASER_DEFAULTS;
+    const defaultImg = `modules/${MODULE_ID}/assets/laser-on.svg`;
+    const flags = {
+      ...LASER_DEFAULTS,
+      ...sys,
+      ...(data.flags?.[MODULE_ID] ?? {})
+    };
+    const update = {
+      [`flags.${MODULE_ID}`]: flags,
+      hidden: true,
+    };
+    if (!data.texture?.src || data.texture.src === "icons/svg/mystery-man.svg") {
+      update["texture.src"] = actor.img && actor.img !== "icons/svg/mystery-man.svg" ? actor.img : defaultImg;
+    }
+    tokenDoc.updateSource(update);
+  }
+}
+
+/**
+ * Called when any token document is created on canvas.
+ * @param {TokenDocument} tokenDoc
+ * @param {object} options
+ * @param {string} userId
+ */
+function onCreateToken(tokenDoc, options, userId) {
+  if (isMirror(tokenDoc) || isLaser(tokenDoc)) {
+    refreshBeams();
+  }
 }
 
 /**
@@ -27,10 +88,8 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
   if (isMirror(tokenDoc) && "rotation" in changes) {
     const currentData = getMirrorData(tokenDoc);
     if (currentData.orientation !== changes.rotation) {
-      // Don't trigger an infinite loop if the change was initiated by our own scripts
-      // updateMirrorData will trigger another updateToken, but it will have flags
       await updateMirrorData(tokenDoc, { orientation: changes.rotation });
-      return; // The next updateToken event will refresh beams
+      return; // updateMirrorData will handle refreshing beams
     }
   }
 

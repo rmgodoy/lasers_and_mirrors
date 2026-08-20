@@ -1,13 +1,14 @@
 import { MODULE_ID } from "../constants.mjs";
+import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
-const { ItemSheetV2 } = foundry.applications.sheets;
+const { ActorSheetV2 } = foundry.applications.sheets;
 
 /**
- * Item sheet for Mirror items (opened from Items sidebar).
- * Reads/writes from item.system (the TypeDataModel).
+ * Actor sheet for Laser actors (opened from Actors sidebar or token double-click).
+ * Reads/writes from actor.system (the TypeDataModel).
  */
-export class MirrorItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
+export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   static DEFAULT_OPTIONS = {
     classes: ["lasers-and-mirrors-sheet"],
@@ -16,7 +17,7 @@ export class MirrorItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       resizable: true,
     },
     form: {
-      handler: MirrorItemSheet.onSubmit,
+      handler: LaserActorSheet.onSubmit,
       closeOnSubmit: false,
       submitOnChange: true,
     },
@@ -24,13 +25,13 @@ export class MirrorItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   static PARTS = {
     form: {
-      template: `modules/${MODULE_ID}/templates/mirror-sheet.hbs`,
+      template: `modules/${MODULE_ID}/templates/laser-sheet.hbs`,
     },
   };
 
   /** @override */
   get title() {
-    return `${game.i18n.localize("LAM.sheets.mirror.title")}: ${this.document.name}`;
+    return `${game.i18n.localize("LAM.sheets.laser.title")}: ${this.document.name}`;
   }
 
   /** @override */
@@ -39,7 +40,11 @@ export class MirrorItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const sys = this.document.system;
     context.color = sys.color;
     context.width = sys.width;
-    context.orientation = sys.orientation;
+    context.range = sys.range;
+    context.intensity = sys.intensity;
+    context.visible = sys.visible;
+    context.interactable = sys.interactable;
+    context.attachable = sys.attachable;
     return context;
   }
 
@@ -50,21 +55,24 @@ export class MirrorItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       input.addEventListener("input", (e) => {
         const span = e.target.nextElementSibling;
         if (span && span.classList.contains("range-value")) {
-          span.textContent = e.target.name === "orientation"
-            ? `${e.target.value}°`
-            : e.target.value;
+          span.textContent = e.target.value;
         }
       });
     });
   }
 
   /**
-   * Handle form submission — save data to item.system.
+   * Handle form submission — save data to actor.system.
    */
   static async onSubmit(event, form, formData) {
     const data = formData.object;
+    data.visible = Boolean(data.visible);
+    data.interactable = Boolean(data.interactable);
+    data.attachable = Boolean(data.attachable);
     data.width = Number(data.width);
-    data.orientation = Number(data.orientation);
+    data.range = Number(data.range);
+    data.intensity = Number(data.intensity);
     await this.document.update({ system: data });
+    refreshBeams();
   }
 }

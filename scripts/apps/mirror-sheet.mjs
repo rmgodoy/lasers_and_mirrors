@@ -50,9 +50,10 @@ export class MirrorTokenConfigSheet extends HandlebarsApplicationMixin(Applicati
   async _prepareContext(options) {
     const data = getMirrorData(this.tokenDoc);
     return {
+      isGM: true,
       color: data.color,
       width: data.width,
-      orientation: data.orientation,
+      orientation: data.orientation ?? this.tokenDoc?.rotation ?? 0,
     };
   }
 
@@ -74,12 +75,9 @@ export class MirrorTokenConfigSheet extends HandlebarsApplicationMixin(Applicati
    */
   static async onSubmit(event, form, formData) {
     const data = formData.object;
-    data.width = Number(data.width);
+    if ("width" in data) data.width = Number(data.width);
     data.orientation = Number(data.orientation);
     await updateMirrorData(this.tokenDoc, data);
-    if (this.tokenDoc.rotation !== data.orientation) {
-      await this.tokenDoc.update({ rotation: data.orientation });
-    }
     refreshBeams();
   }
 }

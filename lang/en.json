@@ -57,7 +57,7 @@
     }
   },
   "TYPES": {
-    "Item": {
+    "Actor": {
       "LasersAndMirrors.laser": "Laser",
       "LasersAndMirrors.mirror": "Mirror"
     }

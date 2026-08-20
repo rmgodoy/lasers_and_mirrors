@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../constants.mjs";
 import { getMirrorData, updateMirrorData } from "../mirror-data.mjs";
+import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -45,7 +46,7 @@ export class MirrorPlayerSheet extends HandlebarsApplicationMixin(ApplicationV2)
   /** @override */
   async _prepareContext(options) {
     const data = getMirrorData(this.tokenDoc);
-    return { orientation: data.orientation };
+    return { orientation: data.orientation ?? this.tokenDoc?.rotation ?? 0 };
   }
 
   /** @override */
@@ -62,15 +63,23 @@ export class MirrorPlayerSheet extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Handle form submission — save orientation back to token flags.
+   * Handle form submission — save orientation back to token flags and rotation.
    */
   static async onSubmit(event, form, formData) {
     const { orientation } = formData.object;
     const newOrientation = Number(orientation);
-    await updateMirrorData(this.tokenDoc, { orientation: newOrientation });
-    if (this.tokenDoc.rotation !== newOrientation) {
-      await this.tokenDoc.update({ rotation: newOrientation });
+
+    // If non-GM, enforce adjacency requirement
+    if (!game.user.isGM) {
+      const playerToken = getPlayerToken();
+      const mirrorToken = this.tokenDoc?.object ?? canvas.tokens?.get(this.tokenDoc?.id);
+      if (!playerToken || (mirrorToken && !areTokensAdjacent(playerToken, mirrorToken))) {
+        ui.notifications.warn(game.i18n.localize("LAM.notify.notAdjacent"));
+        return;
+      }
     }
+
+    await updateMirrorData(this.tokenDoc, { orientation: newOrientation });
     refreshBeams();
   }
 }

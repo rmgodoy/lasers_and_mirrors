@@ -40,11 +40,11 @@ export const MIRROR_DEFAULTS = {
 };
 
 /**
- * Prefixed Item types as registered by Foundry from module.json documentTypes.
+ * Prefixed Actor types as registered by Foundry from module.json documentTypes.
  * Foundry auto-prefixes module subtypes: "laser" becomes "LasersAndMirrors.laser".
- * Use these when comparing item.type values.
+ * Use these when comparing actor.type values.
  */
-export const ITEM_TYPES = {
+export const ACTOR_TYPES = {
   LASER: `${MODULE_ID}.laser`,
   MIRROR: `${MODULE_ID}.mirror`,
 };
