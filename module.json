@@ -32,5 +32,7 @@
       "mirror": {},
       "trigger": {}
     }
-  }
+  },
+  "manifest": "https://raw.githubusercontent.com/rmgodoy/lasers_and_mirrors/main/module.json",
+  "download": "https://github.com/rmgodoy/lasers_and_mirrors/archive/main.zip"
 }
