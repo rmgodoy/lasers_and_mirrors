@@ -3,6 +3,7 @@ import { registerSettings } from "./settings.mjs";
 import { initBeamLayer, refreshBeams } from "./canvas/beam-layer.mjs";
 import { laserLightManager } from "./canvas/beam-lights.mjs";
 import { registerTokenHooks } from "./interaction/token-hooks.mjs";
+import { registerWallHooks } from "./interaction/wall-hooks.mjs";
 import { registerHUDHooks } from "./interaction/hud-buttons.mjs";
 import { registerActorHooks } from "./interaction/actor-hooks.mjs";
 import { registerSocketHandler } from "./interaction/socket-handler.mjs";
@@ -61,6 +62,7 @@ Hooks.once("init", () => {
 Hooks.once("ready", async () => {
   console.log(`${MODULE_ID} | Ready`);
   registerTokenHooks();
+  registerWallHooks();
   registerHUDHooks();
   registerSocketHandler();
   registerMirrorRotationHandler();

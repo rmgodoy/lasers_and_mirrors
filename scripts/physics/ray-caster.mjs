@@ -201,17 +201,58 @@ function traceSingleBeam(laserToken, laserData, maxBounces) {
 }
 
 /**
+ * Test whether a wall blocks a laser beam ray originating from origin.
+ * Open doors, walls with light sense disabled (light: 0), and one-way walls
+ * facing away from the beam do not block the laser beam.
+ * @param {Wall} wall
+ * @param {{ x: number, y: number }} origin
+ * @returns {boolean}
+ */
+export function wallBlocksLaser(wall, origin) {
+  const doc = wall.document ?? wall;
+  if (!doc) return true;
+
+  // 1. Open doors do not block lasers
+  if (wall.isOpen || doc.isOpen) return false;
+  const isDoor = (doc.door ?? 0) > (CONST.WALL_DOOR_TYPES?.NONE ?? 0);
+  if (isDoor && doc.ds === (CONST.WALL_DOOR_STATES?.OPEN ?? 1)) return false;
+
+  // 2. Walls that do not restrict light (e.g. ethereal / invisible walls) do not block lasers
+  const lightSense = doc.light ?? (CONST.WALL_SENSE_TYPES?.NORMAL ?? 1);
+  if (lightSense === (CONST.WALL_SENSE_TYPES?.NONE ?? 0)) return false;
+
+  // 3. Directional walls (one-way walls)
+  const dir = doc.dir ?? (CONST.WALL_DIRECTIONS?.BOTH ?? 0);
+  if (dir !== (CONST.WALL_DIRECTIONS?.BOTH ?? 0) && origin) {
+    const c = doc.c;
+    if (c && c.length >= 4) {
+      const dx = c[2] - c[0];
+      const dy = c[3] - c[1];
+      const cross = dx * (origin.y - c[1]) - dy * (origin.x - c[0]);
+
+      const leftDir = CONST.WALL_DIRECTIONS?.LEFT ?? 1;
+      const rightDir = CONST.WALL_DIRECTIONS?.RIGHT ?? 2;
+      if (dir === leftDir && cross <= 0) return false;
+      if (dir === rightDir && cross >= 0) return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Helper to find all wall intersections along a ray segment.
  * @param {{ x: number, y: number }} origin
  * @param {{ x: number, y: number }} rayEnd
  * @returns {Array<{ point: { x: number, y: number }, t: number, dist: number }>}
  */
-
 function getWallIntersections(origin, rayEnd) {
   const hits = [];
   if (!canvas?.walls?.placeables) return hits;
 
   for (const wall of canvas.walls.placeables) {
+    if (!wallBlocksLaser(wall, origin)) continue;
+
     const c = wall.document?.c;
     if (!c || c.length < 4) continue;
 
