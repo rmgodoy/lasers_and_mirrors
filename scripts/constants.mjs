@@ -1,4 +1,4 @@
-export const MODULE_ID = "lasers-and-mirrors";
+export const MODULE_ID = "LasersAndMirrors";
 
 export const FLAGS = {
   TYPE: "type",
