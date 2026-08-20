@@ -1,4 +1,4 @@
-import { MODULE_ID, ACTOR_TYPES, LASER_DEFAULTS, MIRROR_DEFAULTS } from "../constants.mjs";
+import { MODULE_ID, ACTOR_TYPES, LASER_DEFAULTS, MIRROR_DEFAULTS, TRIGGER_DEFAULTS } from "../constants.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 /**
@@ -13,7 +13,7 @@ export function registerActorHooks() {
 /**
  * Pre-create hook for Actor documents.
  * Automatically assigns default SVG textures, prototypeToken configuration,
- * and default OWNER permissions for mirrors.
+ * and default NONE permissions for mirrors (players interact via right-click HUD only).
  */
 function onPreCreateActor(actor, data, options, userId) {
   if (actor.type === ACTOR_TYPES.LASER) {
@@ -47,12 +47,29 @@ function onPreCreateActor(actor, data, options, userId) {
       }
     };
     const ownership = {
-      default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER ?? 3,
-      ...(data.ownership ?? {})
+      default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.NONE ?? 0,
+      ...(data.ownership ?? {}),
     };
     actor.updateSource({
       img: data.img && data.img !== "icons/svg/mystery-man.svg" ? data.img : defaultImg,
       ownership: ownership,
+      prototypeToken: foundry.utils.mergeObject(proto, data.prototypeToken ?? {})
+    });
+  } else if (actor.type === ACTOR_TYPES.TRIGGER) {
+    const defaultImg = `modules/${MODULE_ID}/assets/trigger.svg`;
+    const sysData = data.system ?? TRIGGER_DEFAULTS;
+    const proto = {
+      texture: { src: defaultImg },
+      width: 1,
+      height: 1,
+      actorLink: false,
+      hidden: true,
+      flags: {
+        [MODULE_ID]: { ...TRIGGER_DEFAULTS, ...sysData }
+      }
+    };
+    actor.updateSource({
+      img: data.img && data.img !== "icons/svg/mystery-man.svg" ? data.img : defaultImg,
       prototypeToken: foundry.utils.mergeObject(proto, data.prototypeToken ?? {})
     });
   }
@@ -124,7 +141,7 @@ function onGetSceneControlButtons(controls) {
           type: ACTOR_TYPES.MIRROR,
           img: `modules/${MODULE_ID}/assets/mirror.svg`,
           system: { ...MIRROR_DEFAULTS },
-          ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER ?? 3 },
+          ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.NONE ?? 0 },
         });
       }
 
@@ -144,4 +161,39 @@ function onGetSceneControlButtons(controls) {
       refreshBeams();
     },
   });
+
+  tools.push({
+    name: "createTrigger",
+    title: "LAM.controls.createTrigger",
+    icon: "fas fa-crosshairs",
+    visible: true,
+    button: true,
+    onClick: async () => {
+      let triggerActor = game.actors.find(a => a.type === ACTOR_TYPES.TRIGGER && a.name === "Trigger Default");
+      if (!triggerActor) {
+        triggerActor = await Actor.create({
+          name: "Trigger Default",
+          type: ACTOR_TYPES.TRIGGER,
+          img: `modules/${MODULE_ID}/assets/trigger.svg`,
+          system: { ...TRIGGER_DEFAULTS },
+        });
+      }
+
+      const point = canvas.grid.getTopLeftPoint(canvas.center);
+      await TokenDocument.create({
+        name: "Trigger",
+        actorId: triggerActor.id,
+        actorLink: false,
+        texture: { src: `modules/${MODULE_ID}/assets/trigger.svg` },
+        x: point.x,
+        y: point.y,
+        width: 1,
+        height: 1,
+        hidden: true,
+        [`flags.${MODULE_ID}`]: { ...TRIGGER_DEFAULTS, ...(triggerActor.system ?? {}) },
+      }, { parent: canvas.scene });
+      refreshBeams();
+    },
+  });
 }
+

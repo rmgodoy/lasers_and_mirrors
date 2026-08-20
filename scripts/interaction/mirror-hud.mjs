@@ -1,5 +1,7 @@
 import { MODULE_ID } from "../constants.mjs";
 import { updateMirrorData } from "../mirror-data.mjs";
+import { emitMirrorRotation } from "./socket-handler.mjs";
+import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 /**
  * A custom PIXI HUD for rotating mirrors.
@@ -12,9 +14,11 @@ export class MirrorHUD extends PIXI.Container {
     this.name = "LAM-MirrorHUD";
 
     this.track = new PIXI.Graphics();
+    this.pointerLine = new PIXI.Graphics();
     this.knob = new PIXI.Graphics();
     
     this.addChild(this.track);
+    this.addChild(this.pointerLine);
     this.addChild(this.knob);
 
     this.dragging = false;
@@ -33,85 +37,158 @@ export class MirrorHUD extends PIXI.Container {
   }
 
   /**
-   * Draw the HUD (track and knob) based on the token's bounds.
+   * Draw the HUD (track, pointer guide, and knob) based on the token's bounds.
    */
   draw() {
     this.clear();
+    this.zIndex = 1000;
+    if (this.token) {
+      this.position.set(this.token.x, this.token.y);
+    }
+
     const bounds = this._getPixelSize();
     const cx = bounds.width / 2;
     const cy = bounds.height / 2;
     // Radius slightly larger than the token bounds
-    this.radius = Math.max(cx, cy) + 20;
+    this.radius = Math.max(cx, cy) + 24;
 
+    // Interactive circular track
     this.track.clear();
-    this.track.lineStyle(4, 0xffffff, 0.4);
+    // Transparent wide stroke for easy clicking/hovering
+    this.track.lineStyle(28, 0xffffff, 0.001);
     this.track.drawCircle(cx, cy, this.radius);
+    // Visible track ring
+    this.track.lineStyle(3, 0x00e5ff, 0.4);
+    this.track.drawCircle(cx, cy, this.radius);
+    // Subtle outer glow ring
+    this.track.lineStyle(1, 0xffffff, 0.2);
+    this.track.drawCircle(cx, cy, this.radius + 3);
 
-    this.knob.clear();
-    this.knob.beginFill(0x00ffcc);
-    this.knob.lineStyle(2, 0xffffff, 1.0);
-    this.knob.drawCircle(0, 0, 10);
-    this.knob.endFill();
+    // Knob visual with generous hitArea
+    this._drawKnob(false);
     
     this.refresh();
     return this;
   }
 
   /**
-   * Update the knob's position and ensure the track is drawn correctly.
+   * Draw the knob graphics and set its generous hit area.
+   * @param {boolean} [hovered=false]
+   */
+  _drawKnob(hovered = false) {
+    this.knob.clear();
+    
+    // Outer glow
+    this.knob.beginFill(0x00e5ff, hovered ? 0.35 : 0.2);
+    this.knob.drawCircle(0, 0, hovered ? 20 : 16);
+    this.knob.endFill();
+
+    // Main knob circle
+    this.knob.beginFill(hovered ? 0x66ffff : 0x00e5ff);
+    this.knob.lineStyle(2.5, 0xffffff, 1.0);
+    this.knob.drawCircle(0, 0, hovered ? 13 : 11);
+    this.knob.endFill();
+
+    // Inner bright center dot
+    this.knob.beginFill(0xffffff, 0.9);
+    this.knob.drawCircle(0, 0, 3.5);
+    this.knob.endFill();
+
+    // Set 30px radius hit area for effortless clicking/grabbing outside token bounds
+    this.knob.hitArea = new PIXI.Circle(0, 0, 30);
+  }
+
+  /**
+   * Update the knob's position and guide line.
    * @param {number} [orientation] Optional forced orientation.
    */
   refresh(orientation) {
+    if (this.token) {
+      this.position.set(this.token.x, this.token.y);
+    }
     if (this.dragging) return; // Don't override while dragging
     
-    // Ensure track is drawn at the correct size (handles late bounds computation)
     const bounds = this._getPixelSize();
     const cx = bounds.width / 2;
     const cy = bounds.height / 2;
-    this.radius = Math.max(cx, cy) + 20;
-
-    this.track.clear();
-    this.track.lineStyle(4, 0xffffff, 0.4);
-    this.track.drawCircle(cx, cy, this.radius);
-
-    this.knob.clear();
-    this.knob.beginFill(0x00ffcc);
-    this.knob.lineStyle(2, 0xffffff, 1.0);
-    this.knob.drawCircle(0, 0, 10);
-    this.knob.endFill();
+    this.radius = Math.max(cx, cy) + 24;
 
     const targetOrientation = orientation !== undefined ? orientation : (this.token.document.rotation ?? 0);
     this.currentOrientation = targetOrientation;
     
-    // Foundry rotation is clockwise starting from South (0 degrees).
-    // Convert Foundry rotation to math angle (0 is South, 90 is West):
+    // Convert Foundry rotation (0° = South, 90° = West) to math angle
     const mathRad = ((targetOrientation + 90) * Math.PI) / 180;
     
-    this.knob.x = cx + this.radius * Math.cos(mathRad);
-    this.knob.y = cy + this.radius * Math.sin(mathRad);
+    const kx = cx + this.radius * Math.cos(mathRad);
+    const ky = cy + this.radius * Math.sin(mathRad);
+
+    this.knob.x = kx;
+    this.knob.y = ky;
+
+    // Draw directional guide line from center to knob
+    this.pointerLine.clear();
+    this.pointerLine.lineStyle(1.5, 0x00e5ff, 0.4);
+    this.pointerLine.moveTo(cx, cy);
+    this.pointerLine.lineTo(kx, ky);
+    // Center point indicator
+    this.pointerLine.beginFill(0x00e5ff, 0.6);
+    this.pointerLine.drawCircle(cx, cy, 3);
+    this.pointerLine.endFill();
   }
 
   _setupInteraction() {
+    // Knob interaction
     this.knob.interactive = true;
     this.knob.eventMode = "static";
     this.knob.cursor = "grab";
 
     this.knob.on("pointerdown", this._onDragStart.bind(this));
-    this.knob.on("pointermove", this._onDragMove.bind(this));
-    this.knob.on("pointerup", this._onDragEnd.bind(this));
-    this.knob.on("pointerupoutside", this._onDragEnd.bind(this));
+    this.knob.on("pointerover", () => this._drawKnob(true));
+    this.knob.on("pointerout", () => {
+      if (!this.dragging) this._drawKnob(false);
+    });
+
+    // Track interaction (clicking anywhere on the circular ring snaps & begins drag)
+    this.track.interactive = true;
+    this.track.eventMode = "static";
+    this.track.cursor = "pointer";
+    this.track.on("pointerdown", (event) => {
+      this._onDragStart(event);
+      this._onDragMove(event);
+    });
   }
 
   _onDragStart(event) {
+    event.stopPropagation?.();
+    if (event.data?.originalEvent) {
+      event.data.originalEvent.stopPropagation?.();
+    }
+    
     this.dragging = true;
     this.knob.cursor = "grabbing";
-    this.interactionData = event.data;
+    this._drawKnob(true);
+
+    // Bind global move and up handlers to canvas stage and window
+    this._stageMoveHandler = this._onDragMove.bind(this);
+    this._stageUpHandler = this._onDragEnd.bind(this);
+
+    canvas.stage?.on("pointermove", this._stageMoveHandler);
+    canvas.stage?.on("pointerup", this._stageUpHandler);
+    canvas.stage?.on("pointerupoutside", this._stageUpHandler);
+    window.addEventListener("pointerup", this._stageUpHandler, { once: true });
   }
 
   _onDragMove(event) {
     if (!this.dragging) return;
-    
-    const newPosition = this.interactionData.getLocalPosition(this);
+    event.stopPropagation?.();
+
+    // Get pointer position in local HUD coordinates
+    let globalPos = event.global ?? event.data?.global;
+    if (!globalPos && event.clientX !== undefined) {
+      globalPos = canvas.stage.toLocal(new PIXI.Point(event.clientX, event.clientY));
+    }
+    const newPosition = globalPos ? this.toLocal(globalPos) : (event.getLocalPosition ? event.getLocalPosition(this) : { x: 0, y: 0 });
+
     const bounds = this._getPixelSize();
     const cx = bounds.width / 2;
     const cy = bounds.height / 2;
@@ -132,30 +209,73 @@ export class MirrorHUD extends PIXI.Container {
 
     // Snap knob visually
     const snapRad = ((foundryRotation + 90) * Math.PI) / 180;
-    this.knob.x = cx + this.radius * Math.cos(snapRad);
-    this.knob.y = cy + this.radius * Math.sin(snapRad);
+    const kx = cx + this.radius * Math.cos(snapRad);
+    const ky = cy + this.radius * Math.sin(snapRad);
+    this.knob.x = kx;
+    this.knob.y = ky;
 
+    // Update guide line
+    this.pointerLine.clear();
+    this.pointerLine.lineStyle(1.5, 0x00e5ff, 0.5);
+    this.pointerLine.moveTo(cx, cy);
+    this.pointerLine.lineTo(kx, ky);
+    this.pointerLine.beginFill(0x00e5ff, 0.7);
+    this.pointerLine.drawCircle(cx, cy, 3);
+    this.pointerLine.endFill();
+
+    // Real-time optimistic update of token sprite rotation and beams
+    this._applyLocalRotation(foundryRotation);
     this.throttledUpdate(foundryRotation);
   }
 
   _onDragEnd(event) {
     if (!this.dragging) return;
+    event?.stopPropagation?.();
     this.dragging = false;
     this.knob.cursor = "grab";
-    this.interactionData = null;
+    this._drawKnob(false);
+
+    if (this._stageMoveHandler) {
+      canvas.stage?.off("pointermove", this._stageMoveHandler);
+      canvas.stage?.off("pointerup", this._stageUpHandler);
+      canvas.stage?.off("pointerupoutside", this._stageUpHandler);
+      this._stageMoveHandler = null;
+      this._stageUpHandler = null;
+    }
     
     // Final sync
     this._emitUpdate(this.currentOrientation);
   }
 
+  _applyLocalRotation(orientation) {
+    if (this.token.document) {
+      this.token.document.updateSource({ rotation: orientation });
+      if (this.token.document.flags?.[MODULE_ID]) {
+        this.token.document.flags[MODULE_ID].orientation = orientation;
+      }
+    }
+    if (this.token.mesh) {
+      this.token.mesh.rotation = (orientation * Math.PI) / 180;
+    }
+    if (this.token.renderFlags) {
+      this.token.renderFlags.set({ refreshRotation: true });
+    }
+    refreshBeams();
+  }
+
   async _emitUpdate(orientation) {
-    await updateMirrorData(this.token.document, { orientation });
-    
-    // If we are not the owner, we can optimistically update rotation locally
-    // to hide latency, though refreshToken might be called anyway.
-    if (this.token.document.rotation !== orientation) {
-       this.token.document.updateSource({ rotation: orientation });
-       this.token.renderFlags.set({ refreshRotation: true });
+    this._applyLocalRotation(orientation);
+
+    if (game.user.isGM) {
+      // GM can update directly
+      await updateMirrorData(this.token.document, { orientation });
+    } else {
+      // Non-GM: send via websocket for GM to process
+      emitMirrorRotation(
+        this.token.document.parent.id,
+        this.token.document.id,
+        orientation
+      );
     }
   }
 
@@ -164,6 +284,22 @@ export class MirrorHUD extends PIXI.Container {
    */
   clear() {
     this.track.clear();
+    this.pointerLine.clear();
     this.knob.clear();
   }
+
+  /**
+   * Cleanup event listeners on destruction.
+   */
+  destroy(options) {
+    if (this._stageMoveHandler) {
+      canvas.stage?.off("pointermove", this._stageMoveHandler);
+      canvas.stage?.off("pointerup", this._stageUpHandler);
+      canvas.stage?.off("pointerupoutside", this._stageUpHandler);
+      this._stageMoveHandler = null;
+      this._stageUpHandler = null;
+    }
+    super.destroy(options);
+  }
 }
+

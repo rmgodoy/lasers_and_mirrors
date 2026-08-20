@@ -1,10 +1,11 @@
 import { MODULE_ID, TYPES } from "../constants.mjs";
 import { isLaser, getLaserData, updateLaserData } from "../laser-data.mjs";
 import { isMirror } from "../mirror-data.mjs";
+import { isTrigger } from "../trigger-data.mjs";
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
 import { LaserTokenConfigSheet } from "../apps/laser-sheet.mjs";
 import { MirrorTokenConfigSheet } from "../apps/mirror-sheet.mjs";
-import { MirrorPlayerSheet } from "../apps/mirror-player-sheet.mjs";
+import { TriggerTokenConfigSheet } from "../apps/trigger-sheet.mjs";
 import { attachLaser, detachLaser, isLaserAttachedTo } from "./attachment.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
@@ -126,7 +127,7 @@ function onRenderTokenHUD(hud, html, data) {
       }
     }
   } else if (isMirror(tokenDoc)) {
-    // GM Config Button
+    // GM Config Button only — player rotation is handled by right-click drag
     if (game.user.isGM) {
       const gmBtn = createHUDButton(
         "fas fa-cog",
@@ -138,21 +139,19 @@ function onRenderTokenHUD(hud, html, data) {
       );
       col.appendChild(gmBtn);
     }
-
-    // Player Adjust Button
-    const adjustBtn = createHUDButton(
-      "fas fa-sync-alt",
-      game.i18n.localize("LAM.hud.adjustMirror"),
-      (ev) => {
-        ev.stopPropagation();
-        const playerToken = getPlayerToken();
-        if (!game.user.isGM && (!playerToken || !areTokensAdjacent(playerToken, token))) {
-          ui.notifications.warn(game.i18n.localize("LAM.notify.notAdjacent"));
-          return;
+  } else if (isTrigger(tokenDoc)) {
+    // GM Config Button for triggers
+    if (game.user.isGM) {
+      const gmBtn = createHUDButton(
+        "fas fa-cog",
+        game.i18n.localize("LAM.hud.configureTrigger"),
+        (ev) => {
+          ev.stopPropagation();
+          new TriggerTokenConfigSheet(tokenDoc).render(true);
         }
-        new MirrorPlayerSheet(tokenDoc).render(true);
-      }
-    );
-    col.appendChild(adjustBtn);
+      );
+      col.appendChild(gmBtn);
+    }
   }
 }
+

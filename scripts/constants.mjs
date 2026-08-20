@@ -1,5 +1,7 @@
 export const MODULE_ID = "LasersAndMirrors";
 
+export const SOCKET_NAME = `module.${MODULE_ID}`;
+
 export const FLAGS = {
   TYPE: "type",
   // Laser flags
@@ -13,11 +15,18 @@ export const FLAGS = {
   ATTACHED_TO_TOKEN_ID: "attachedToTokenId",
   // Mirror flags
   ORIENTATION: "orientation",
+  // Trigger flags
+  ENABLED: "enabled",
+  PASS_THROUGH: "passThrough",
+  ON_BEAM_HIT: "onBeamHit",
+  ON_BEAM_STAY: "onBeamStay",
+  ON_BEAM_LOST: "onBeamLost",
 };
 
 export const TYPES = {
   LASER: "laser",
   MIRROR: "mirror",
+  TRIGGER: "trigger",
 };
 
 export const LASER_DEFAULTS = {
@@ -39,6 +48,15 @@ export const MIRROR_DEFAULTS = {
   orientation: 0,
 };
 
+export const TRIGGER_DEFAULTS = {
+  type: "trigger",
+  enabled: true,
+  passThrough: false,
+  onBeamHit: "",
+  onBeamStay: "",
+  onBeamLost: "",
+};
+
 /**
  * Prefixed Actor types as registered by Foundry from module.json documentTypes.
  * Foundry auto-prefixes module subtypes: "laser" becomes "LasersAndMirrors.laser".
@@ -47,4 +65,5 @@ export const MIRROR_DEFAULTS = {
 export const ACTOR_TYPES = {
   LASER: `${MODULE_ID}.laser`,
   MIRROR: `${MODULE_ID}.mirror`,
+  TRIGGER: `${MODULE_ID}.trigger`,
 };

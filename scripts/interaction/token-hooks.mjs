@@ -1,6 +1,7 @@
-import { MODULE_ID, ACTOR_TYPES, LASER_DEFAULTS, MIRROR_DEFAULTS } from "../constants.mjs";
+import { MODULE_ID, ACTOR_TYPES, LASER_DEFAULTS, MIRROR_DEFAULTS, TRIGGER_DEFAULTS } from "../constants.mjs";
 import { isLaser } from "../laser-data.mjs";
 import { isMirror, getMirrorData, updateMirrorData } from "../mirror-data.mjs";
+import { isTrigger } from "../trigger-data.mjs";
 import { isModuleToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 import { syncAttachedLasers, handleTokenDeletion } from "./attachment.mjs";
@@ -12,14 +13,16 @@ import { syncAttachedLasers, handleTokenDeletion } from "./attachment.mjs";
 export function registerTokenHooks() {
   Hooks.on("preCreateToken", onPreCreateToken);
   Hooks.on("createToken", onCreateToken);
+  Hooks.on("preUpdateToken", onPreUpdateToken);
   Hooks.on("updateToken", onUpdateToken);
   Hooks.on("deleteToken", onDeleteToken);
   Hooks.on("refreshToken", onRefreshToken);
+  Hooks.on("controlToken", onControlToken);
 }
 
 /**
  * Pre-create hook for Token documents.
- * Ensures mirror and laser tokens placed on canvas have correct defaults.
+ * Ensures mirror, laser, and trigger tokens placed on canvas have correct defaults.
  * @param {TokenDocument} tokenDoc
  * @param {object} data
  * @param {object} options
@@ -61,6 +64,22 @@ function onPreCreateToken(tokenDoc, data, options, userId) {
       update["texture.src"] = actor.img && actor.img !== "icons/svg/mystery-man.svg" ? actor.img : defaultImg;
     }
     tokenDoc.updateSource(update);
+  } else if (actor.type === ACTOR_TYPES.TRIGGER) {
+    const sys = actor.system ?? TRIGGER_DEFAULTS;
+    const defaultImg = `modules/${MODULE_ID}/assets/trigger.svg`;
+    const flags = {
+      ...TRIGGER_DEFAULTS,
+      ...sys,
+      ...(data.flags?.[MODULE_ID] ?? {})
+    };
+    const update = {
+      [`flags.${MODULE_ID}`]: flags,
+      hidden: true,
+    };
+    if (!data.texture?.src || data.texture.src === "icons/svg/mystery-man.svg") {
+      update["texture.src"] = actor.img && actor.img !== "icons/svg/mystery-man.svg" ? actor.img : defaultImg;
+    }
+    tokenDoc.updateSource(update);
   }
 }
 
@@ -71,9 +90,30 @@ function onPreCreateToken(tokenDoc, data, options, userId) {
  * @param {string} userId
  */
 function onCreateToken(tokenDoc, options, userId) {
-  if (isMirror(tokenDoc) || isLaser(tokenDoc)) {
+  if (isMirror(tokenDoc) || isLaser(tokenDoc) || isTrigger(tokenDoc)) {
     refreshBeams();
   }
+}
+
+/**
+ * Pre-update hook — block non-GM players from directly moving or rotating mirror tokens.
+ * Updates initiated by GM (including socket-relayed updates) are permitted.
+ * @param {TokenDocument} tokenDoc
+ * @param {object} changes
+ * @param {object} options
+ * @param {string} userId
+ * @returns {boolean} false to cancel the update
+ */
+function onPreUpdateToken(tokenDoc, changes, options, userId) {
+  const user = game.users.get(userId);
+  if (user?.isGM || game.user.isGM) return true;
+  if (!isMirror(tokenDoc)) return true;
+
+  // Block position and rotation changes for non-GM users
+  const blocked = ("x" in changes) || ("y" in changes) || ("rotation" in changes);
+  if (blocked) return false;
+
+  return true;
 }
 
 /**
@@ -84,12 +124,26 @@ function onCreateToken(tokenDoc, options, userId) {
  * @param {string} userId
  */
 async function onUpdateToken(tokenDoc, changes, options, userId) {
-  // If a mirror was rotated directly (e.g. via UI), sync its orientation flag
-  if (isMirror(tokenDoc) && "rotation" in changes) {
+  // If a mirror was rotated directly by a GM outside the module (e.g. quick rotation tool), sync its flag
+  if (game.user.isGM && isMirror(tokenDoc) && ("rotation" in changes) && !changes.flags?.[MODULE_ID]) {
     const currentData = getMirrorData(tokenDoc);
     if (currentData.orientation !== changes.rotation) {
       await updateMirrorData(tokenDoc, { orientation: changes.rotation });
-      return; // updateMirrorData will handle refreshing beams
+      return;
+    }
+  }
+
+  // Ensure mirror token mesh visual angle is always in sync with rotation
+  if (isMirror(tokenDoc) && ("rotation" in changes || changes.flags?.[MODULE_ID])) {
+    const token = tokenDoc.object ?? canvas.tokens?.get(tokenDoc.id);
+    if (token) {
+      const rot = changes.rotation ?? changes.flags?.[MODULE_ID]?.orientation ?? tokenDoc.rotation;
+      if (token.mesh) {
+        token.mesh.rotation = (rot * Math.PI) / 180;
+      }
+      if (token.renderFlags) {
+        token.renderFlags.set({ refreshRotation: true });
+      }
     }
   }
 
@@ -134,3 +188,16 @@ function onRefreshToken(token, flags) {
     refreshBeams();
   }
 }
+
+/**
+ * Control token hook — prevent non-GM users from selecting mirror tokens.
+ * @param {Token} token
+ * @param {boolean} controlled - whether the token is being selected
+ * @returns {boolean} false to prevent selection
+ */
+function onControlToken(token, controlled) {
+  if (game.user.isGM) return true;
+  if (controlled && isMirror(token.document)) return false;
+  return true;
+}
+

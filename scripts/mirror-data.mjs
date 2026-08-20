@@ -45,7 +45,7 @@ export async function updateMirrorData(tokenDoc, changes) {
   if ("orientation" in changes) {
     updateData.rotation = Number(changes.orientation);
   }
-  await tokenDoc.update(updateData);
+  await tokenDoc.update(updateData, { animate: false });
 
   if (tokenDoc.actor && tokenDoc.actor.type === ACTOR_TYPES.MIRROR) {
     await tokenDoc.actor.update({ system: changes });

@@ -27,6 +27,9 @@
       },
       "mirrorPlayer": {
         "title": "Adjust Mirror Orientation"
+      },
+      "trigger": {
+        "title": "Trigger Configuration"
       }
     },
     "labels": {
@@ -37,13 +40,19 @@
       "visible": "Laser Active / Visible",
       "interactable": "Players Can Rotate",
       "attachable": "Can Attach to Tokens",
-      "orientation": "Mirror Angle (Degrees)"
+      "orientation": "Mirror Angle (Degrees)",
+      "enabled": "Enabled",
+      "passThrough": "Beam Passes Through",
+      "onBeamHit": "On Beam Hit (Macro)",
+      "onBeamStay": "On Beam Stay (Macro, 500ms loop)",
+      "onBeamLost": "On Beam Lost (Macro)"
     },
     "hud": {
       "adjustMirror": "Rotate Mirror",
       "toggleLaser": "Toggle Laser Beam",
       "attachLaser": "Attach Laser to Target",
-      "detachLaser": "Detach Laser"
+      "detachLaser": "Detach Laser",
+      "configureTrigger": "Configure Trigger"
     },
     "notify": {
       "notAdjacent": "You must be adjacent to the mirror to adjust it.",
@@ -53,13 +62,15 @@
     },
     "controls": {
       "createLaser": "Create Laser Token",
-      "createMirror": "Create Mirror Token"
+      "createMirror": "Create Mirror Token",
+      "createTrigger": "Create Trigger Token"
     }
   },
   "TYPES": {
     "Actor": {
       "LasersAndMirrors.laser": "Laser",
-      "LasersAndMirrors.mirror": "Mirror"
+      "LasersAndMirrors.mirror": "Mirror",
+      "LasersAndMirrors.trigger": "Trigger"
     }
   }
 }

@@ -1,7 +1,7 @@
 import { MODULE_ID, TYPES, FLAGS } from "../constants.mjs";
 
 /**
- * Get the module type of a token ("laser", "mirror", or null).
+ * Get the module type of a token ("laser", "mirror", "trigger", or null).
  * @param {TokenDocument} tokenDoc
  * @returns {string|null}
  */
@@ -10,13 +10,13 @@ export function getTokenType(tokenDoc) {
 }
 
 /**
- * Check if a token is a module-managed token (laser or mirror).
+ * Check if a token is a module-managed token (laser, mirror, or trigger).
  * @param {TokenDocument} tokenDoc
  * @returns {boolean}
  */
 export function isModuleToken(tokenDoc) {
   const type = getTokenType(tokenDoc);
-  return type === TYPES.LASER || type === TYPES.MIRROR;
+  return type === TYPES.LASER || type === TYPES.MIRROR || type === TYPES.TRIGGER;
 }
 
 /**

@@ -61,3 +61,26 @@
   border-color: #ff6400;
   color: #ffffff;
 }
+
+/* Trigger macro textarea styling */
+.lasers-and-mirrors-sheet .lam-macro-group {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.lasers-and-mirrors-sheet .lam-macro-group label {
+  margin-bottom: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-macro-group textarea {
+  width: 100%;
+  min-height: 60px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  resize: vertical;
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid #7a7971;
+  border-radius: 3px;
+  padding: 6px;
+}
+

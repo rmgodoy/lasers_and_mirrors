@@ -4,10 +4,14 @@ import { initBeamLayer, refreshBeams } from "./canvas/beam-layer.mjs";
 import { registerTokenHooks } from "./interaction/token-hooks.mjs";
 import { registerHUDHooks } from "./interaction/hud-buttons.mjs";
 import { registerActorHooks } from "./interaction/actor-hooks.mjs";
+import { registerSocketHandler } from "./interaction/socket-handler.mjs";
+import { registerMirrorRotationHandler } from "./interaction/mirror-rotation-handler.mjs";
 import { LaserActorModel } from "./data-models/laser-actor-model.mjs";
 import { MirrorActorModel } from "./data-models/mirror-actor-model.mjs";
+import { TriggerActorModel } from "./data-models/trigger-actor-model.mjs";
 import { LaserActorSheet } from "./apps/laser-actor-sheet.mjs";
 import { MirrorActorSheet } from "./apps/mirror-actor-sheet.mjs";
+import { TriggerActorSheet } from "./apps/trigger-actor-sheet.mjs";
 
 /**
  * Module initialization — register data models, settings, sheets, and hooks.
@@ -19,6 +23,7 @@ Hooks.once("init", () => {
   Object.assign(CONFIG.Actor.dataModels, {
     [ACTOR_TYPES.LASER]: LaserActorModel,
     [ACTOR_TYPES.MIRROR]: MirrorActorModel,
+    [ACTOR_TYPES.TRIGGER]: TriggerActorModel,
   });
 
   // Register settings
@@ -36,25 +41,33 @@ Hooks.once("init", () => {
     makeDefault: true,
     label: "LAM.sheets.mirror.title",
   });
+  DSC.registerSheet(foundry.documents.Actor, MODULE_ID, TriggerActorSheet, {
+    types: [ACTOR_TYPES.TRIGGER],
+    makeDefault: true,
+    label: "LAM.sheets.trigger.title",
+  });
 
   // Register actor-related hooks (scene controls, actor pre-creation)
   registerActorHooks();
 });
 
 /**
- * Module ready — register interaction hooks and ensure mirror permissions.
+ * Module ready — register interaction hooks, socket handler, and migrate mirror permissions.
  */
 Hooks.once("ready", async () => {
   console.log(`${MODULE_ID} | Ready`);
   registerTokenHooks();
   registerHUDHooks();
+  registerSocketHandler();
+  registerMirrorRotationHandler();
 
-  // Ensure all existing mirror actors are owned by everyone by default
+  // Migrate existing mirror actors: downgrade ownership from OWNER to NONE
+  // Players interact with mirrors only via the right-click circular HUD and websocket relay
   if (game.user.isGM) {
-    const ownerLevel = CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER ?? 3;
+    const noneLevel = CONST.DOCUMENT_OWNERSHIP_LEVELS?.NONE ?? 0;
     for (const actor of game.actors.filter(a => a.type === ACTOR_TYPES.MIRROR)) {
-      if (actor.ownership?.default !== ownerLevel) {
-        await actor.update({ "ownership.default": ownerLevel });
+      if (actor.ownership?.default !== noneLevel) {
+        await actor.update({ "ownership.default": noneLevel });
       }
     }
   }
@@ -68,3 +81,4 @@ Hooks.on("canvasReady", async () => {
   console.log(`${MODULE_ID} | Canvas ready, initializing beam layer`);
   await initBeamLayer();
 });
+

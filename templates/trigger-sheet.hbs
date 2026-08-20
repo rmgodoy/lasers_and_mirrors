@@ -1,0 +1,28 @@
+<div class="lasers-and-mirrors-sheet">
+  <h2>{{localize "LAM.sheets.trigger.title"}}</h2>
+
+  <div class="form-group">
+    <label for="enabled">{{localize "LAM.labels.enabled"}}</label>
+    <input type="checkbox" name="enabled" {{checked enabled}}/>
+  </div>
+
+  <div class="form-group">
+    <label for="passThrough">{{localize "LAM.labels.passThrough"}}</label>
+    <input type="checkbox" name="passThrough" {{checked passThrough}}/>
+  </div>
+
+  <div class="form-group lam-macro-group">
+    <label for="onBeamHit">{{localize "LAM.labels.onBeamHit"}}</label>
+    <textarea name="onBeamHit" rows="4" placeholder="// Runs once when beam first hits">{{onBeamHit}}</textarea>
+  </div>
+
+  <div class="form-group lam-macro-group">
+    <label for="onBeamStay">{{localize "LAM.labels.onBeamStay"}}</label>
+    <textarea name="onBeamStay" rows="4" placeholder="// Loops every 500ms while beam stays">{{onBeamStay}}</textarea>
+  </div>
+
+  <div class="form-group lam-macro-group">
+    <label for="onBeamLost">{{localize "LAM.labels.onBeamLost"}}</label>
+    <textarea name="onBeamLost" rows="4" placeholder="// Runs once when beam leaves">{{onBeamLost}}</textarea>
+  </div>
+</div>

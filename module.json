@@ -29,7 +29,8 @@
   "documentTypes": {
     "Actor": {
       "laser": {},
-      "mirror": {}
+      "mirror": {},
+      "trigger": {}
     }
   }
 }
