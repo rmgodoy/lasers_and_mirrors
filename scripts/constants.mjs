@@ -13,6 +13,9 @@ export const FLAGS = {
   INTERACTABLE: "interactable",
   ATTACHABLE: "attachable",
   ATTACHED_TO_TOKEN_ID: "attachedToTokenId",
+  EMIT_LIGHT: "emitLight",
+  LIGHT_RADIUS: "lightRadius",
+  PROVIDES_VISION: "providesVision",
   // Mirror flags
   ORIENTATION: "orientation",
   // Trigger flags
@@ -40,6 +43,9 @@ export const LASER_DEFAULTS = {
   interactable: false,
   attachable: false,
   attachedToTokenId: null,
+  emitLight: true,
+  lightRadius: 1,
+  providesVision: false,
 };
 
 

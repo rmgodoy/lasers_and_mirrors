@@ -1,6 +1,14 @@
 {
   "LAM": {
     "settings": {
+      "enableLaserLight": {
+        "name": "Enable Laser Lighting",
+        "hint": "Whether lasers emit visible light along their beam path affecting player vision and darkness."
+      },
+      "laserLightRadius": {
+        "name": "Default Light Radius",
+        "hint": "Default radius in grid units for light emitted along laser beams (0.1 to 5.0)."
+      },
       "maxBounces": {
         "name": "Maximum Bounces",
         "hint": "Maximum number of times a laser beam can reflect off mirrors."
@@ -38,6 +46,9 @@
       "range": "Beam Range (Grids)",
       "intensity": "Beam Intensity",
       "visible": "Laser Active / Visible",
+      "emitLight": "Emit Visible Light",
+      "lightRadius": "Light Radius (Grids)",
+      "providesVision": "Provides Direct Vision",
       "interactable": "Players Can Rotate",
       "attachable": "Can Attach to Tokens",
       "orientation": "Mirror Angle (Degrees)",

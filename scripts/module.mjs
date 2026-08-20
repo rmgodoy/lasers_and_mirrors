@@ -1,6 +1,7 @@
 import { MODULE_ID, ACTOR_TYPES } from "./constants.mjs";
 import { registerSettings } from "./settings.mjs";
 import { initBeamLayer, refreshBeams } from "./canvas/beam-layer.mjs";
+import { laserLightManager } from "./canvas/beam-lights.mjs";
 import { registerTokenHooks } from "./interaction/token-hooks.mjs";
 import { registerHUDHooks } from "./interaction/hud-buttons.mjs";
 import { registerActorHooks } from "./interaction/actor-hooks.mjs";
@@ -18,6 +19,9 @@ import { TriggerActorSheet } from "./apps/trigger-actor-sheet.mjs";
  */
 Hooks.once("init", () => {
   console.log(`${MODULE_ID} | Initializing`);
+
+  // Hook for Foundry perception lighting re-initialization
+  Hooks.on("initializeLightSources", () => laserLightManager.onInitializeLightSources());
 
   // Register TypeDataModels for custom Actor subtypes
   Object.assign(CONFIG.Actor.dataModels, {

@@ -56,6 +56,9 @@ export class LaserTokenConfigSheet extends HandlebarsApplicationMixin(Applicatio
       intensity: data.intensity,
       orientation: data.orientation ?? this.tokenDoc?.rotation ?? 0,
       visible: data.visible,
+      emitLight: data.emitLight ?? true,
+      lightRadius: data.lightRadius ?? 1,
+      providesVision: data.providesVision ?? false,
       interactable: data.interactable,
       attachable: data.attachable,
     };
@@ -80,11 +83,14 @@ export class LaserTokenConfigSheet extends HandlebarsApplicationMixin(Applicatio
   static async onSubmit(event, form, formData) {
     const data = formData.object;
     data.visible = Boolean(data.visible);
+    data.emitLight = Boolean(data.emitLight);
+    data.providesVision = Boolean(data.providesVision);
     data.interactable = Boolean(data.interactable);
     data.attachable = Boolean(data.attachable);
     data.width = Number(data.width);
     data.range = Number(data.range);
     data.intensity = Number(data.intensity);
+    if ("lightRadius" in data) data.lightRadius = Number(data.lightRadius);
     if ("orientation" in data) data.orientation = Number(data.orientation);
     await updateLaserData(this.tokenDoc, data);
     refreshBeams();

@@ -1,11 +1,14 @@
 import { MODULE_ID } from "../constants.mjs";
 import { BeamRenderer } from "./beam-renderer.mjs";
 import { traceAllBeams } from "../physics/ray-caster.mjs";
-const CanvasLayer = foundry.canvas.layers.CanvasLayer ?? globalThis.CanvasLayer;
+import { laserLightManager } from "./beam-lights.mjs";
+
+const CanvasLayer = foundry.canvas.layers?.CanvasLayer ?? globalThis.CanvasLayer ?? PIXI.Container;
 
 /**
  * Custom CanvasLayer that renders all laser beams.
- * Added to canvas.interface so beams draw above tokens.
+ * Mounted in canvas.effects so beam graphics are masked by Fog of War
+ * without incurring PrimaryCanvasGroup depth buffer snapshot overhead.
  */
 export class BeamLayer extends CanvasLayer {
 
@@ -42,7 +45,7 @@ export class BeamLayer extends CanvasLayer {
 
   /** @override */
   static get layerOptions() {
-    return foundry.utils.mergeObject(super.layerOptions, {
+    return foundry.utils.mergeObject(super.layerOptions ?? {}, {
       name: "beams",
       zIndex: 500
     });
@@ -50,10 +53,12 @@ export class BeamLayer extends CanvasLayer {
 
   /** @override */
   async _draw(options) {
-    await super._draw(options);
+    if (typeof super._draw === "function") await super._draw(options);
+
     this.beamContainer = new PIXI.Container();
     this.addChild(this.beamContainer);
     this.renderer = new BeamRenderer(this.beamContainer);
+
     this.refresh();
   }
 
@@ -71,8 +76,12 @@ export class BeamLayer extends CanvasLayer {
       this.beamContainer.destroy({ children: true });
       this.beamContainer = null;
     }
+
+    // Clean up laser light sources
+    laserLightManager.clearAll();
+
     this.renderer = null;
-    await super._tearDown(options);
+    if (typeof super._tearDown === "function") await super._tearDown(options);
   }
 
   /**
@@ -88,18 +97,21 @@ export class BeamLayer extends CanvasLayer {
    * Internal: perform the actual refresh.
    */
   _doRefresh() {
-    if (!this.renderer || !this.beamContainer) return;
-    const maxBounces = game.settings.get(MODULE_ID, "maxBounces");
+    if (!this.renderer) return;
+    const maxBounces = game.settings?.get(MODULE_ID, "maxBounces") ?? 10;
     const beamResults = traceAllBeams(maxBounces);
 
     // Extract segments for rendering
     const beamGroups = beamResults.map(r => r.segments);
-    const opacity = game.settings.get(MODULE_ID, "beamOpacity");
-    const glow = game.settings.get(MODULE_ID, "glowEffect");
+    const opacity = game.settings?.get(MODULE_ID, "beamOpacity") ?? 0.8;
+    const glow = game.settings?.get(MODULE_ID, "glowEffect") ?? true;
     this.renderer.draw(beamGroups, { opacity, glow });
 
+    // Update emitted lights along the laser beams
+    laserLightManager.updateLights(beamResults);
+
     // Process trigger macro lifecycle (GM only)
-    if (game.user.isGM) {
+    if (game.user?.isGM) {
       this._processTriggers(beamResults);
     }
   }
@@ -250,7 +262,8 @@ export async function initBeamLayer() {
     beamLayer.destroy({ children: true });
   }
   beamLayer = new BeamLayer();
-  canvas.interface.addChild(beamLayer);
+  const parent = canvas.effects ?? canvas.interface;
+  parent.addChild(beamLayer);
   await beamLayer.draw();
 }
 

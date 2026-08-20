@@ -1,6 +1,28 @@
 import { MODULE_ID } from "./constants.mjs";
+import { refreshBeams } from "./canvas/beam-layer.mjs";
 
 export function registerSettings() {
+  game.settings.register(MODULE_ID, "enableLaserLight", {
+    name: "LAM.settings.enableLaserLight.name",
+    hint: "LAM.settings.enableLaserLight.hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => refreshBeams(),
+  });
+
+  game.settings.register(MODULE_ID, "laserLightRadius", {
+    name: "LAM.settings.laserLightRadius.name",
+    hint: "LAM.settings.laserLightRadius.hint",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: 1.0,
+    range: { min: 0.1, max: 5.0, step: 0.1 },
+    onChange: () => refreshBeams(),
+  });
+
   game.settings.register(MODULE_ID, "maxBounces", {
     name: "LAM.settings.maxBounces.name",
     hint: "LAM.settings.maxBounces.hint",
@@ -9,6 +31,7 @@ export function registerSettings() {
     type: Number,
     default: 10,
     range: { min: 1, max: 50, step: 1 },
+    onChange: () => refreshBeams(),
   });
 
   game.settings.register(MODULE_ID, "beamOpacity", {
@@ -19,6 +42,7 @@ export function registerSettings() {
     type: Number,
     default: 0.8,
     range: { min: 0.1, max: 1.0, step: 0.1 },
+    onChange: () => refreshBeams(),
   });
 
   game.settings.register(MODULE_ID, "glowEffect", {
@@ -28,6 +52,7 @@ export function registerSettings() {
     config: true,
     type: Boolean,
     default: true,
+    onChange: () => refreshBeams(),
   });
 
   game.settings.register(MODULE_ID, "debugMode", {

@@ -46,6 +46,9 @@ export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.intensity = data.intensity ?? LASER_DEFAULTS.intensity;
     context.orientation = data.orientation ?? this.document.token?.rotation ?? this.document.prototypeToken?.rotation ?? 0;
     context.visible = data.visible ?? LASER_DEFAULTS.visible;
+    context.emitLight = data.emitLight ?? LASER_DEFAULTS.emitLight;
+    context.lightRadius = data.lightRadius ?? LASER_DEFAULTS.lightRadius;
+    context.providesVision = data.providesVision ?? LASER_DEFAULTS.providesVision;
     context.interactable = data.interactable ?? LASER_DEFAULTS.interactable;
     context.attachable = data.attachable ?? LASER_DEFAULTS.attachable;
     return context;
@@ -72,11 +75,14 @@ export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async onSubmit(event, form, formData) {
     const data = formData.object;
     data.visible = Boolean(data.visible);
+    data.emitLight = Boolean(data.emitLight);
+    data.providesVision = Boolean(data.providesVision);
     data.interactable = Boolean(data.interactable);
     data.attachable = Boolean(data.attachable);
     data.width = Number(data.width);
     data.range = Number(data.range);
     data.intensity = Number(data.intensity);
+    if ("lightRadius" in data) data.lightRadius = Number(data.lightRadius);
     if ("orientation" in data) data.orientation = Number(data.orientation);
 
 

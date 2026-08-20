@@ -146,7 +146,8 @@ function traceSingleBeam(laserToken, laserData, maxBounces) {
         end: segEnd,
         color,
         width,
-        intensity
+        intensity,
+        hitMirrorToken: nearestHit.mirrorToken
       });
 
       if (isHittingFrontSide(direction, nearestHit.normal)) {
@@ -169,7 +170,8 @@ function traceSingleBeam(laserToken, laserData, maxBounces) {
         end: { ...nearestHit.point },
         color,
         width,
-        intensity
+        intensity,
+        hitTriggerToken: nearestHit.triggerToken
       });
       break;
     } else {
@@ -195,7 +197,7 @@ function traceSingleBeam(laserToken, laserData, maxBounces) {
     }
   }
 
-  return { segments, hitTriggers };
+  return { segments, hitTriggers, laserToken, laserData };
 }
 
 /**
