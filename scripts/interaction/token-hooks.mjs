@@ -58,6 +58,7 @@ function onPreCreateToken(tokenDoc, data, options, userId) {
     };
     const update = {
       [`flags.${MODULE_ID}`]: flags,
+      rotation: data.rotation ?? sys.orientation ?? LASER_DEFAULTS.orientation,
       hidden: false,
     };
     if (!data.texture?.src || data.texture.src === "icons/svg/mystery-man.svg") {
@@ -124,17 +125,25 @@ function onPreUpdateToken(tokenDoc, changes, options, userId) {
  * @param {string} userId
  */
 async function onUpdateToken(tokenDoc, changes, options, userId) {
-  // If a mirror was rotated directly by a GM outside the module (e.g. quick rotation tool), sync its flag
-  if (game.user.isGM && isMirror(tokenDoc) && ("rotation" in changes) && !changes.flags?.[MODULE_ID]) {
-    const currentData = getMirrorData(tokenDoc);
-    if (currentData.orientation !== changes.rotation) {
-      await updateMirrorData(tokenDoc, { orientation: changes.rotation });
-      return;
+  // If a mirror or laser was rotated directly by a GM outside the module (e.g. quick rotation tool), sync its flag
+  if (game.user.isGM && (isMirror(tokenDoc) || isLaser(tokenDoc)) && ("rotation" in changes) && !changes.flags?.[MODULE_ID]) {
+    if (isMirror(tokenDoc)) {
+      const currentData = getMirrorData(tokenDoc);
+      if (currentData.orientation !== changes.rotation) {
+        await updateMirrorData(tokenDoc, { orientation: changes.rotation });
+        return;
+      }
+    } else if (isLaser(tokenDoc)) {
+      const currentData = getLaserData(tokenDoc);
+      if (currentData.orientation !== changes.rotation) {
+        await updateLaserData(tokenDoc, { orientation: changes.rotation });
+        return;
+      }
     }
   }
 
-  // Ensure mirror token mesh visual angle is always in sync with rotation
-  if (isMirror(tokenDoc) && ("rotation" in changes || changes.flags?.[MODULE_ID])) {
+  // Ensure mirror & laser token mesh visual angle is always in sync with rotation
+  if ((isMirror(tokenDoc) || isLaser(tokenDoc)) && ("rotation" in changes || changes.flags?.[MODULE_ID])) {
     const token = tokenDoc.object ?? canvas.tokens?.get(tokenDoc.id);
     if (token) {
       const rot = changes.rotation ?? changes.flags?.[MODULE_ID]?.orientation ?? tokenDoc.rotation;
@@ -146,6 +155,7 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
       }
     }
   }
+
 
   // If a non-laser token moved, sync any attached lasers
   const posChanged = ("x" in changes) || ("y" in changes) || ("rotation" in changes);

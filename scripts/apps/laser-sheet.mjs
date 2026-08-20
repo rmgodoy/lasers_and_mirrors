@@ -54,6 +54,7 @@ export class LaserTokenConfigSheet extends HandlebarsApplicationMixin(Applicatio
       width: data.width,
       range: data.range,
       intensity: data.intensity,
+      orientation: data.orientation ?? this.tokenDoc?.rotation ?? 0,
       visible: data.visible,
       interactable: data.interactable,
       attachable: data.attachable,
@@ -84,7 +85,9 @@ export class LaserTokenConfigSheet extends HandlebarsApplicationMixin(Applicatio
     data.width = Number(data.width);
     data.range = Number(data.range);
     data.intensity = Number(data.intensity);
+    if ("orientation" in data) data.orientation = Number(data.orientation);
     await updateLaserData(this.tokenDoc, data);
     refreshBeams();
   }
+
 }

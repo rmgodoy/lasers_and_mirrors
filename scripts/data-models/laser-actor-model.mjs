@@ -28,7 +28,15 @@ export class LaserActorModel extends foundry.abstract.TypeDataModel {
         max: 1,
         step: 0.1,
       }),
+      orientation: new fields.NumberField({
+        required: true,
+        initial: 0,
+        min: 0,
+        max: 359,
+        integer: true,
+      }),
       visible: new fields.BooleanField({ initial: true }),
+
       interactable: new fields.BooleanField({ initial: false }),
       attachable: new fields.BooleanField({ initial: false }),
       attachedToTokenId: new fields.StringField({

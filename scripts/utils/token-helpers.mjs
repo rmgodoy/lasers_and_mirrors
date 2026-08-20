@@ -58,20 +58,20 @@ export function getPlayerToken() {
 
 /**
  * Get the facing direction of a token as a normalized {x, y} vector.
- * Foundry rotation: 0° = south, 90° = west, etc. (clockwise from south).
- * Convert to standard math angle: 0° = east, counter-clockwise.
+ * Foundry rotation: 0° = south (+Y), 90° = west (-X), 180° = north (-Y), 270° = east (+X).
  * @param {TokenDocument|Token} tokenDoc
  * @returns {{ x: number, y: number }}
  */
 export function getTokenFacingVector(tokenDoc) {
   const doc = tokenDoc?.document ?? tokenDoc;
   const rotDeg = doc?.rotation ?? 0;
-  const mathRad = ((180 - rotDeg) * Math.PI) / 180;
+  const rad = (rotDeg * Math.PI) / 180;
   return {
-    x: Math.cos(mathRad),
-    y: -Math.sin(mathRad) // Y is inverted on canvas (down = positive)
+    x: -Math.sin(rad),
+    y: Math.cos(rad)
   };
 }
+
 
 /**
  * Get the center point of a token in canvas coordinates.

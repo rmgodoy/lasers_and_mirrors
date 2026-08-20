@@ -47,12 +47,15 @@ export async function updateLaserData(tokenDoc, changes) {
   for (const [key, value] of Object.entries(changes)) {
     updateData[`flags.${MODULE_ID}.${key}`] = value;
   }
+  if ("orientation" in changes) {
+    updateData.rotation = Number(changes.orientation);
+  }
   if (changes.visible !== undefined) {
     updateData["texture.src"] = changes.visible
       ? `modules/${MODULE_ID}/assets/laser-on.svg`
       : `modules/${MODULE_ID}/assets/laser-off.svg`;
   }
-  await doc.update(updateData);
+  await doc.update(updateData, { animate: false });
 
   if (doc.actor && doc.actor.type === ACTOR_TYPES.LASER) {
     if (doc.actor.isToken || doc.isLinked) {
@@ -60,6 +63,7 @@ export async function updateLaserData(tokenDoc, changes) {
     }
   }
 }
+
 
 
 /**

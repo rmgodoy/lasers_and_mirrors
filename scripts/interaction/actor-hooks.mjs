@@ -74,11 +74,13 @@ function onPreCreateActor(actor, data, options, userId) {
       width: 1,
       height: 1,
       actorLink: false,
+      rotation: sysData.orientation ?? LASER_DEFAULTS.orientation,
       hidden: false,
       flags: {
         [MODULE_ID]: { ...LASER_DEFAULTS, ...sysData }
       }
     };
+
     actor.updateSource({
       img: data.img && data.img !== "icons/svg/mystery-man.svg" ? data.img : defaultImg,
       prototypeToken: foundry.utils.mergeObject(proto, data.prototypeToken ?? {})

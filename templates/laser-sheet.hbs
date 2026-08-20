@@ -24,6 +24,13 @@
   </div>
 
   <div class="form-group">
+    <label for="orientation">{{localize "LAM.labels.orientation"}}</label>
+    <input type="range" name="orientation" min="0" max="359" step="1" value="{{orientation}}"/>
+    <span class="range-value">{{orientation}}°</span>
+  </div>
+
+
+  <div class="form-group">
     <label for="visible">{{localize "LAM.labels.visible"}}</label>
     <input type="checkbox" name="visible" {{checked visible}}/>
   </div>

@@ -35,11 +35,13 @@ export const LASER_DEFAULTS = {
   width: 4,
   range: 30,
   intensity: 0.8,
+  orientation: 0,
   visible: true,
   interactable: false,
   attachable: false,
   attachedToTokenId: null,
 };
+
 
 export const MIRROR_DEFAULTS = {
   type: "mirror",

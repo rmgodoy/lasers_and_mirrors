@@ -44,6 +44,7 @@ export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.width = data.width ?? LASER_DEFAULTS.width;
     context.range = data.range ?? LASER_DEFAULTS.range;
     context.intensity = data.intensity ?? LASER_DEFAULTS.intensity;
+    context.orientation = data.orientation ?? this.document.token?.rotation ?? this.document.prototypeToken?.rotation ?? 0;
     context.visible = data.visible ?? LASER_DEFAULTS.visible;
     context.interactable = data.interactable ?? LASER_DEFAULTS.interactable;
     context.attachable = data.attachable ?? LASER_DEFAULTS.attachable;
@@ -57,7 +58,9 @@ export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       input.addEventListener("input", (e) => {
         const span = e.target.nextElementSibling;
         if (span && span.classList.contains("range-value")) {
-          span.textContent = e.target.value;
+          span.textContent = e.target.name === "orientation"
+            ? `${e.target.value}°`
+            : e.target.value;
         }
       });
     });
@@ -74,6 +77,8 @@ export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     data.width = Number(data.width);
     data.range = Number(data.range);
     data.intensity = Number(data.intensity);
+    if ("orientation" in data) data.orientation = Number(data.orientation);
+
 
     if (this.document.isToken && this.document.token) {
       // Unlinked synthetic token sheet: update ONLY this token
