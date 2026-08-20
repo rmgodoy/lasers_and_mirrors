@@ -18,6 +18,7 @@ export class MirrorItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     form: {
       handler: MirrorItemSheet.onSubmit,
       closeOnSubmit: false,
+      submitOnChange: true,
     },
   };
 

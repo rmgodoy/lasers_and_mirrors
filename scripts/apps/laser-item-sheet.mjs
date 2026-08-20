@@ -18,6 +18,7 @@ export class LaserItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     form: {
       handler: LaserItemSheet.onSubmit,
       closeOnSubmit: false,
+      submitOnChange: true,
     },
   };
 

@@ -26,7 +26,8 @@ export class MirrorPlayerSheet extends HandlebarsApplicationMixin(ApplicationV2)
     position: { width: 320, height: "auto" },
     form: {
       handler: MirrorPlayerSheet.onSubmit,
-      closeOnSubmit: true,
+      closeOnSubmit: false,
+      submitOnChange: true,
     },
   };
 
