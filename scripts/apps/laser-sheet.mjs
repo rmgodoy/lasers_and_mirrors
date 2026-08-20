@@ -3,26 +3,24 @@ import { getLaserData, updateLaserData } from "../laser-data.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const ItemSheetV2 = foundry.applications.sheets?.ItemSheetV2 ?? ApplicationV2;
 
-export class LaserSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
+/**
+ * Token config popup for Laser tokens (opened from Token HUD).
+ * Reads/writes token flags — NOT an Item sheet.
+ */
+export class LaserTokenConfigSheet extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
-   * @param {TokenDocument|ItemDocument|object} docOrOptions
+   * @param {TokenDocument} tokenDoc - the token document to configure
    * @param {object} options
    */
-  constructor(docOrOptions = {}, options = {}) {
-    let opts = options;
-    if (docOrOptions instanceof foundry.abstract.Document) {
-      opts = { ...options, document: docOrOptions };
-    } else {
-      opts = docOrOptions;
-    }
-    super(opts);
+  constructor(tokenDoc, options = {}) {
+    super(options);
+    this.tokenDoc = tokenDoc;
   }
 
   static DEFAULT_OPTIONS = {
-    id: "laser-sheet-{id}",
+    id: "laser-token-config-{id}",
     tag: "form",
     classes: ["lasers-and-mirrors-sheet"],
     window: {
@@ -31,7 +29,7 @@ export class LaserSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     },
     position: { width: 380, height: "auto" },
     form: {
-      handler: LaserSheet.onSubmit,
+      handler: LaserTokenConfigSheet.onSubmit,
       closeOnSubmit: true,
     },
   };
@@ -49,7 +47,7 @@ export class LaserSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   /** @override */
   async _prepareContext(options) {
-    const data = getLaserData(this.document);
+    const data = getLaserData(this.tokenDoc);
     return {
       color: data.color,
       width: data.width,
@@ -85,7 +83,7 @@ export class LaserSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     data.width = Number(data.width);
     data.range = Number(data.range);
     data.intensity = Number(data.intensity);
-    await updateLaserData(this.document, data);
+    await updateLaserData(this.tokenDoc, data);
     refreshBeams();
   }
 }

@@ -58,14 +58,8 @@
   },
   "TYPES": {
     "Item": {
-      "laser": "Laser",
-      "mirror": "Mirror",
       "LasersAndMirrors.laser": "Laser",
-      "LasersAndMirrors.mirror": "Mirror",
-      "LasersAndMirrors": {
-        "laser": "Laser",
-        "mirror": "Mirror"
-      }
+      "LasersAndMirrors.mirror": "Mirror"
     }
   }
 }

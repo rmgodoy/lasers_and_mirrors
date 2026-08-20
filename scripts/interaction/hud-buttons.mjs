@@ -2,8 +2,8 @@ import { MODULE_ID, TYPES } from "../constants.mjs";
 import { isLaser, getLaserData, updateLaserData } from "../laser-data.mjs";
 import { isMirror } from "../mirror-data.mjs";
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
-import { LaserSheet } from "../apps/laser-sheet.mjs";
-import { MirrorSheet } from "../apps/mirror-sheet.mjs";
+import { LaserTokenConfigSheet } from "../apps/laser-sheet.mjs";
+import { MirrorTokenConfigSheet } from "../apps/mirror-sheet.mjs";
 import { MirrorPlayerSheet } from "../apps/mirror-player-sheet.mjs";
 import { attachLaser, detachLaser, isLaserAttachedTo } from "./attachment.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
@@ -54,7 +54,7 @@ function onRenderTokenHUD(hud, html, data) {
         game.i18n.localize("LAM.sheets.laser.title"),
         (ev) => {
           ev.stopPropagation();
-          new LaserSheet(tokenDoc).render(true);
+          new LaserTokenConfigSheet(tokenDoc).render(true);
         }
       );
       col.appendChild(gmBtn);
@@ -133,7 +133,7 @@ function onRenderTokenHUD(hud, html, data) {
         game.i18n.localize("LAM.sheets.mirror.title"),
         (ev) => {
           ev.stopPropagation();
-          new MirrorSheet(tokenDoc).render(true);
+          new MirrorTokenConfigSheet(tokenDoc).render(true);
         }
       );
       col.appendChild(gmBtn);

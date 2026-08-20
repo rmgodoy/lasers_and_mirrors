@@ -3,26 +3,24 @@ import { getMirrorData, updateMirrorData } from "../mirror-data.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const ItemSheetV2 = foundry.applications.sheets?.ItemSheetV2 ?? ApplicationV2;
 
-export class MirrorSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
+/**
+ * Token config popup for Mirror tokens (opened from Token HUD).
+ * Reads/writes token flags — NOT an Item sheet.
+ */
+export class MirrorTokenConfigSheet extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
-   * @param {TokenDocument|ItemDocument|object} docOrOptions
+   * @param {TokenDocument} tokenDoc - the token document to configure
    * @param {object} options
    */
-  constructor(docOrOptions = {}, options = {}) {
-    let opts = options;
-    if (docOrOptions instanceof foundry.abstract.Document) {
-      opts = { ...options, document: docOrOptions };
-    } else {
-      opts = docOrOptions;
-    }
-    super(opts);
+  constructor(tokenDoc, options = {}) {
+    super(options);
+    this.tokenDoc = tokenDoc;
   }
 
   static DEFAULT_OPTIONS = {
-    id: "mirror-sheet-{id}",
+    id: "mirror-token-config-{id}",
     tag: "form",
     classes: ["lasers-and-mirrors-sheet"],
     window: {
@@ -31,7 +29,7 @@ export class MirrorSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     },
     position: { width: 380, height: "auto" },
     form: {
-      handler: MirrorSheet.onSubmit,
+      handler: MirrorTokenConfigSheet.onSubmit,
       closeOnSubmit: true,
     },
   };
@@ -49,7 +47,7 @@ export class MirrorSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   /** @override */
   async _prepareContext(options) {
-    const data = getMirrorData(this.document);
+    const data = getMirrorData(this.tokenDoc);
     return {
       color: data.color,
       width: data.width,
@@ -71,13 +69,13 @@ export class MirrorSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   /**
-   * Handle form submission — save mirror data back to document flags.
+   * Handle form submission — save mirror data back to token flags.
    */
   static async onSubmit(event, form, formData) {
     const data = formData.object;
     data.width = Number(data.width);
     data.orientation = Number(data.orientation);
-    await updateMirrorData(this.document, data);
+    await updateMirrorData(this.tokenDoc, data);
     refreshBeams();
   }
 }
