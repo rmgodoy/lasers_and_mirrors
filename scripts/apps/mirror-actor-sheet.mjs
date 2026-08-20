@@ -44,6 +44,8 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.color = data.color ?? MIRROR_DEFAULTS.color;
     context.width = data.width ?? MIRROR_DEFAULTS.width;
     context.orientation = data.orientation ?? MIRROR_DEFAULTS.orientation;
+    context.interactable = data.interactable ?? MIRROR_DEFAULTS.interactable;
+    context.attachable = data.attachable ?? MIRROR_DEFAULTS.attachable;
     return context;
   }
 
@@ -68,8 +70,9 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async onSubmit(event, form, formData) {
     const data = formData.object;
     if ("width" in data) data.width = Number(data.width);
-    const newOrientation = Number(data.orientation);
-    data.orientation = newOrientation;
+    if ("orientation" in data) data.orientation = Number(data.orientation);
+    data.interactable = Boolean(data.interactable);
+    data.attachable = Boolean(data.attachable);
 
     if (this.document.isToken && this.document.token) {
       // Unlinked synthetic token sheet: update ONLY this token

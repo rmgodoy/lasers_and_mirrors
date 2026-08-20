@@ -65,14 +65,20 @@
       "detachLaser": "Detach Laser",
       "pickUpLaser": "Pick Up Laser",
       "dropLaser": "Drop Laser",
+      "attachMirror": "Attach Mirror to Target",
+      "detachMirror": "Detach Mirror",
+      "pickUpMirror": "Pick Up Mirror",
+      "dropMirror": "Drop Mirror",
       "configureTrigger": "Configure Trigger"
     },
     "notify": {
       "notAdjacent": "You must be adjacent to interact with this token.",
-      "noPlayerToken": "You need a player token to pick up the laser.",
+      "noPlayerToken": "You need a player token to interact with this object.",
       "laserAttached": "Laser attached to token.",
       "laserDetached": "Laser detached.",
-      "laserToggled": "Laser state toggled."
+      "laserToggled": "Laser state toggled.",
+      "mirrorAttached": "Mirror attached to token.",
+      "mirrorDetached": "Mirror detached."
     },
 
     "controls": {

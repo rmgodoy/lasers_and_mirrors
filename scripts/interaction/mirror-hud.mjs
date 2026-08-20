@@ -1,15 +1,30 @@
 import { MODULE_ID } from "../constants.mjs";
 import { isLaser, getLaserData, updateLaserData } from "../laser-data.mjs";
-import { updateMirrorData } from "../mirror-data.mjs";
-import { emitMirrorRotation, emitRotateLaser, emitAttachLaser, emitDetachLaser } from "./socket-handler.mjs";
-import { attachLaser, detachLaser, isLaserAttachedTo } from "./attachment.mjs";
+import { isMirror, getMirrorData, updateMirrorData } from "../mirror-data.mjs";
+import {
+  emitMirrorRotation,
+  emitRotateLaser,
+  emitAttachLaser,
+  emitDetachLaser,
+  emitAttachMirror,
+  emitDetachMirror,
+} from "./socket-handler.mjs";
+import {
+  attachLaser,
+  detachLaser,
+  isLaserAttachedTo,
+  attachMirror,
+  detachMirror,
+  isMirrorAttachedTo,
+  isAttachedTo,
+} from "./attachment.mjs";
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 /**
  * A custom PIXI HUD for interacting with mirrors and lasers.
  * Drawn as a circular track around the token with a draggable knob (for rotation)
- * and an optional Hand action button (for picking up / dropping attachable lasers).
+ * and an optional Hand action button (for picking up / dropping attachable lasers and mirrors).
  */
 export class MirrorHUD extends PIXI.Container {
   constructor(token) {
@@ -84,9 +99,15 @@ export class MirrorHUD extends PIXI.Container {
     this.radius = Math.max(cx, cy) + 24;
 
     const isLaserToken = isLaser(this.token.document);
+    const isMirrorToken = isMirror(this.token.document);
     const laserData = isLaserToken ? getLaserData(this.token.document) : null;
-    const canRotate = isLaserToken ? (game.user.isGM || laserData?.interactable) : true;
-    const canAttach = isLaserToken ? (game.user.isGM || laserData?.attachable) : false;
+    const mirrorData = isMirrorToken ? getMirrorData(this.token.document) : null;
+    const canRotate = isLaserToken
+      ? (game.user.isGM || laserData?.interactable)
+      : (game.user.isGM || mirrorData?.interactable !== false);
+    const canAttach = isLaserToken
+      ? (game.user.isGM || laserData?.attachable)
+      : (game.user.isGM || mirrorData?.attachable);
 
     if (canRotate) {
       this.track.visible = true;
@@ -159,7 +180,7 @@ export class MirrorHUD extends PIXI.Container {
     this.attachButtonBg.clear();
 
     const playerToken = getPlayerToken();
-    const isAttached = playerToken ? isLaserAttachedTo(this.token.document, playerToken.document) : false;
+    const isAttached = playerToken ? isAttachedTo(this.token.document, playerToken.document) : false;
     const themeColor = isAttached ? 0xff9100 : 0x00e5ff;
     const highlightColor = isAttached ? 0xffb74d : 0x66ffff;
 
@@ -178,9 +199,10 @@ export class MirrorHUD extends PIXI.Container {
     this.attachButtonIcon.style.fill = hovered ? 0xffffff : themeColor;
 
     // Label text
+    const isLaserToken = isLaser(this.token.document);
     const labelText = isAttached
-      ? (game.i18n.localize("LAM.hud.dropLaser") || "Drop")
-      : (game.i18n.localize("LAM.hud.pickUpLaser") || "Pick Up");
+      ? (isLaserToken ? (game.i18n.localize("LAM.hud.dropLaser") || "Drop") : (game.i18n.localize("LAM.hud.dropMirror") || "Drop"))
+      : (isLaserToken ? (game.i18n.localize("LAM.hud.pickUpLaser") || "Pick Up") : (game.i18n.localize("LAM.hud.pickUpMirror") || "Pick Up"));
     this.attachButtonLabel.text = labelText;
     this.attachButtonLabel.y = 19;
     this.attachButtonLabel.style.fill = hovered ? 0xffffff : 0xdddddd;
@@ -205,9 +227,15 @@ export class MirrorHUD extends PIXI.Container {
     this.radius = Math.max(cx, cy) + 24;
 
     const isLaserToken = isLaser(this.token.document);
+    const isMirrorToken = isMirror(this.token.document);
     const laserData = isLaserToken ? getLaserData(this.token.document) : null;
-    const canRotate = isLaserToken ? (game.user.isGM || laserData?.interactable) : true;
-    const canAttach = isLaserToken ? (game.user.isGM || laserData?.attachable) : false;
+    const mirrorData = isMirrorToken ? getMirrorData(this.token.document) : null;
+    const canRotate = isLaserToken
+      ? (game.user.isGM || laserData?.interactable)
+      : (game.user.isGM || mirrorData?.interactable !== false);
+    const canAttach = isLaserToken
+      ? (game.user.isGM || laserData?.attachable)
+      : (game.user.isGM || mirrorData?.attachable);
 
     if (canAttach && this.attachButton.visible) {
       this.attachButton.position.set(cx, cy - this.radius - 20);
@@ -288,25 +316,44 @@ export class MirrorHUD extends PIXI.Container {
       return;
     }
 
-    const isAttached = isLaserAttachedTo(this.token.document, playerToken.document);
+    const isLaserToken = isLaser(this.token.document);
+    const isAttached = isAttachedTo(this.token.document, playerToken.document);
 
     if (isAttached) {
-      if (game.user.isGM) {
-        await detachLaser(this.token.document);
-        refreshBeams();
+      if (isLaserToken) {
+        if (game.user.isGM) {
+          await detachLaser(this.token.document);
+          refreshBeams();
+        } else {
+          emitDetachLaser(this.token.document.parent.id, this.token.document.id);
+        }
       } else {
-        emitDetachLaser(this.token.document.parent.id, this.token.document.id);
+        if (game.user.isGM) {
+          await detachMirror(this.token.document);
+          refreshBeams();
+        } else {
+          emitDetachMirror(this.token.document.parent.id, this.token.document.id);
+        }
       }
     } else {
       if (!game.user.isGM && !areTokensAdjacent(playerToken, this.token)) {
         ui.notifications.warn(game.i18n.localize("LAM.notify.notAdjacent"));
         return;
       }
-      if (game.user.isGM) {
-        await attachLaser(this.token.document, playerToken.document);
-        refreshBeams();
+      if (isLaserToken) {
+        if (game.user.isGM) {
+          await attachLaser(this.token.document, playerToken.document);
+          refreshBeams();
+        } else {
+          emitAttachLaser(this.token.document.parent.id, this.token.document.id, playerToken.document.id);
+        }
       } else {
-        emitAttachLaser(this.token.document.parent.id, this.token.document.id, playerToken.document.id);
+        if (game.user.isGM) {
+          await attachMirror(this.token.document, playerToken.document);
+          refreshBeams();
+        } else {
+          emitAttachMirror(this.token.document.parent.id, this.token.document.id, playerToken.document.id);
+        }
       }
     }
 

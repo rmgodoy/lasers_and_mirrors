@@ -1,13 +1,26 @@
 import { MODULE_ID, TYPES } from "../constants.mjs";
 import { isLaser, getLaserData, updateLaserData } from "../laser-data.mjs";
-import { isMirror } from "../mirror-data.mjs";
+import { isMirror, getMirrorData } from "../mirror-data.mjs";
 import { isTrigger } from "../trigger-data.mjs";
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
 import { LaserTokenConfigSheet } from "../apps/laser-sheet.mjs";
 import { MirrorTokenConfigSheet } from "../apps/mirror-sheet.mjs";
 import { TriggerTokenConfigSheet } from "../apps/trigger-sheet.mjs";
-import { attachLaser, detachLaser, isLaserAttachedTo } from "./attachment.mjs";
-import { emitToggleLaser, emitAttachLaser, emitDetachLaser } from "./socket-handler.mjs";
+import {
+  attachLaser,
+  detachLaser,
+  isLaserAttachedTo,
+  attachMirror,
+  detachMirror,
+  isMirrorAttachedTo,
+} from "./attachment.mjs";
+import {
+  emitToggleLaser,
+  emitAttachLaser,
+  emitDetachLaser,
+  emitAttachMirror,
+  emitDetachMirror,
+} from "./socket-handler.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 /**
@@ -140,7 +153,9 @@ function onRenderTokenHUD(hud, html, data) {
       }
     }
   } else if (isMirror(tokenDoc)) {
-    // GM Config Button only — player rotation is handled by right-click drag
+    const mirrorData = getMirrorData(tokenDoc);
+
+    // GM Config Button
     if (game.user.isGM) {
       const gmBtn = createHUDButton(
         "fas fa-cog",
@@ -151,6 +166,52 @@ function onRenderTokenHUD(hud, html, data) {
         }
       );
       col.appendChild(gmBtn);
+    }
+
+    // Attach / Detach Button
+    if (mirrorData.attachable) {
+      const playerToken = getPlayerToken();
+      if (playerToken) {
+        const attached = isMirrorAttachedTo(tokenDoc, playerToken.document);
+        if (attached) {
+          const detachBtn = createHUDButton(
+            "fas fa-unlink",
+            game.i18n.localize("LAM.hud.detachMirror"),
+            async (ev) => {
+              ev.stopPropagation();
+              if (game.user.isGM) {
+                await detachMirror(tokenDoc);
+                refreshBeams();
+              } else {
+                emitDetachMirror(tokenDoc.parent.id, tokenDoc.id);
+              }
+              hud.render();
+            }
+          );
+          col.appendChild(detachBtn);
+        } else {
+          const attachBtn = createHUDButton(
+            "fas fa-link",
+            game.i18n.localize("LAM.hud.attachMirror"),
+            async (ev) => {
+              ev.stopPropagation();
+              const pToken = getPlayerToken();
+              if (!pToken || !areTokensAdjacent(pToken, token)) {
+                ui.notifications.warn(game.i18n.localize("LAM.notify.notAdjacent"));
+                return;
+              }
+              if (game.user.isGM) {
+                await attachMirror(tokenDoc, pToken.document);
+                refreshBeams();
+              } else {
+                emitAttachMirror(tokenDoc.parent.id, tokenDoc.id, pToken.document.id);
+              }
+              hud.render();
+            }
+          );
+          col.appendChild(attachBtn);
+        }
+      }
     }
   } else if (isTrigger(tokenDoc)) {
     // GM Config Button for triggers

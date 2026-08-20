@@ -5,7 +5,7 @@ import { isMirror, getMirrorData, updateMirrorData } from "../mirror-data.mjs";
 import { isTrigger } from "../trigger-data.mjs";
 import { isModuleToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
-import { syncAttachedLasers, handleTokenDeletion } from "./attachment.mjs";
+import { syncAttachedObjects, handleTokenDeletion } from "./attachment.mjs";
 
 /**
  * Register all token-related hooks.
@@ -159,10 +159,10 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
   }
 
 
-  // If a non-laser token moved, sync any attached lasers
+  // If a non-module token moved or rotated, sync any attached lasers and mirrors
   const posChanged = ("x" in changes) || ("y" in changes) || ("rotation" in changes);
-  if (posChanged && !isLaser(tokenDoc)) {
-    await syncAttachedLasers(tokenDoc, changes);
+  if (posChanged && !isLaser(tokenDoc) && !isMirror(tokenDoc)) {
+    await syncAttachedObjects(tokenDoc, changes);
   }
 
   // Refresh beams if flags changed, position/rotation changed, or if it's any module token

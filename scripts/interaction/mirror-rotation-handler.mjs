@@ -1,4 +1,4 @@
-import { isMirror } from "../mirror-data.mjs";
+import { isMirror, getMirrorData } from "../mirror-data.mjs";
 import { isLaser, getLaserData } from "../laser-data.mjs";
 import { MirrorHUD } from "./mirror-hud.mjs";
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
@@ -112,11 +112,20 @@ function _onPointerUp(event) {
 
     const tokenDoc = rotatableToken.document;
     const isLaserToken = isLaser(tokenDoc);
+    const isMirrorToken = isMirror(tokenDoc);
 
     // If it's a laser and not GM, verify interactable or attachable flag
     if (isLaserToken && !game.user.isGM) {
       const laserData = getLaserData(tokenDoc);
       if (!laserData.interactable && !laserData.attachable) {
+        return;
+      }
+    }
+
+    // If it's a mirror and not GM, verify interactable or attachable flag
+    if (isMirrorToken && !game.user.isGM) {
+      const mirrorData = getMirrorData(tokenDoc);
+      if (!mirrorData.interactable && !mirrorData.attachable) {
         return;
       }
     }

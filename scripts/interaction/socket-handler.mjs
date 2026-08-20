@@ -1,7 +1,7 @@
 import { SOCKET_NAME, MODULE_ID } from "../constants.mjs";
 import { updateMirrorData } from "../mirror-data.mjs";
 import { updateLaserData } from "../laser-data.mjs";
-import { attachLaser, detachLaser } from "./attachment.mjs";
+import { attachLaser, detachLaser, attachMirror, detachMirror } from "./attachment.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 
 /**
@@ -35,6 +35,12 @@ async function onSocketMessage(data) {
       break;
     case "detachLaser":
       await handleDetachLaser(data);
+      break;
+    case "attachMirror":
+      await handleAttachMirror(data);
+      break;
+    case "detachMirror":
+      await handleDetachMirror(data);
       break;
     default:
       console.warn(`${MODULE_ID} | Unknown socket action: ${data.action}`);
@@ -119,6 +125,37 @@ async function handleDetachLaser({ sceneId, laserTokenId }) {
 }
 
 /**
+ * Handle an attachMirror socket request from a player.
+ * @param {object} data - { action, sceneId, mirrorTokenId, targetTokenId }
+ */
+async function handleAttachMirror({ sceneId, mirrorTokenId, targetTokenId }) {
+  const scene = game.scenes.get(sceneId);
+  if (!scene) return;
+
+  const mirrorDoc = scene.tokens.get(mirrorTokenId);
+  const targetDoc = scene.tokens.get(targetTokenId);
+  if (!mirrorDoc || !targetDoc) return;
+
+  await attachMirror(mirrorDoc, targetDoc);
+  refreshBeams();
+}
+
+/**
+ * Handle a detachMirror socket request from a player.
+ * @param {object} data - { action, sceneId, mirrorTokenId }
+ */
+async function handleDetachMirror({ sceneId, mirrorTokenId }) {
+  const scene = game.scenes.get(sceneId);
+  if (!scene) return;
+
+  const mirrorDoc = scene.tokens.get(mirrorTokenId);
+  if (!mirrorDoc) return;
+
+  await detachMirror(mirrorDoc);
+  refreshBeams();
+}
+
+/**
  * Emit a mirror rotation request via websocket.
  * @param {string} sceneId
  * @param {string} tokenId
@@ -189,6 +226,34 @@ export function emitDetachLaser(sceneId, laserTokenId) {
     action: "detachLaser",
     sceneId,
     laserTokenId,
+  });
+}
+
+/**
+ * Emit a mirror attachment request via websocket.
+ * @param {string} sceneId
+ * @param {string} mirrorTokenId
+ * @param {string} targetTokenId
+ */
+export function emitAttachMirror(sceneId, mirrorTokenId, targetTokenId) {
+  game.socket.emit(SOCKET_NAME, {
+    action: "attachMirror",
+    sceneId,
+    mirrorTokenId,
+    targetTokenId,
+  });
+}
+
+/**
+ * Emit a mirror detachment request via websocket.
+ * @param {string} sceneId
+ * @param {string} mirrorTokenId
+ */
+export function emitDetachMirror(sceneId, mirrorTokenId) {
+  game.socket.emit(SOCKET_NAME, {
+    action: "detachMirror",
+    sceneId,
+    mirrorTokenId,
   });
 }
 

@@ -54,6 +54,9 @@ export const MIRROR_DEFAULTS = {
   color: "#c0c0c0",
   width: 1,
   orientation: 0,
+  interactable: true,
+  attachable: false,
+  attachedToTokenId: null,
 };
 
 export const TRIGGER_DEFAULTS = {
