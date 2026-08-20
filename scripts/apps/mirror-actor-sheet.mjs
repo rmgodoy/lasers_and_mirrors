@@ -70,20 +70,20 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if ("width" in data) data.width = Number(data.width);
     const newOrientation = Number(data.orientation);
     data.orientation = newOrientation;
-    await this.document.update({ system: data });
 
-    // Sync token rotation if this actor is a token synthetic actor or has a token on scene
-    let tokenDoc = this.document.token;
-    if (!tokenDoc) {
-      const controlled = canvas.tokens?.controlled?.find(t => t.actor?.id === this.document.id);
-      tokenDoc = controlled?.document ?? this.document.getActiveTokens(true, true)?.[0] ?? this.document.getActiveTokens()[0]?.document;
-    }
-    if (tokenDoc) {
-      await updateMirrorData(tokenDoc, data);
+    if (this.document.isToken && this.document.token) {
+      // Unlinked synthetic token sheet: update ONLY this token
+      await updateMirrorData(this.document.token, data);
     } else {
-      const sceneTokens = canvas.scene?.tokens?.filter(t => t.actorId === this.document.id);
-      if (sceneTokens) {
-        for (const tDoc of sceneTokens) {
+      // Base World Actor sheet (sidebar): update actor system & prototypeToken defaults
+      await this.document.update({
+        system: data,
+        [`prototypeToken.flags.${MODULE_ID}`]: { ...MIRROR_DEFAULTS, ...data },
+      });
+      // Only sync linked tokens on scene
+      const linkedTokens = canvas.scene?.tokens?.filter(t => t.actorId === this.document.id && t.isLinked);
+      if (linkedTokens) {
+        for (const tDoc of linkedTokens) {
           await updateMirrorData(tDoc, data);
         }
       }
@@ -92,4 +92,5 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     refreshBeams();
   }
 }
+
 

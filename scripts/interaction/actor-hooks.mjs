@@ -30,15 +30,27 @@ async function onUpdateActor(actor, changes, options, userId) {
   if (!isModuleActor) return;
 
   if (game.user.isGM && changes.system) {
-    const sceneTokens = canvas.scene?.tokens?.filter(t => t.actorId === actor.id || t.actor?.id === actor.id);
-    if (sceneTokens) {
-      for (const tokenDoc of sceneTokens) {
-        if (actor.type === ACTOR_TYPES.LASER) {
-          await updateLaserData(tokenDoc, changes.system);
-        } else if (actor.type === ACTOR_TYPES.MIRROR) {
-          await updateMirrorData(tokenDoc, changes.system);
-        } else if (actor.type === ACTOR_TYPES.TRIGGER) {
-          await updateTriggerData(tokenDoc, changes.system);
+    if (actor.isToken && actor.token) {
+      // Synthetic actor update: sync only its own token
+      if (actor.type === ACTOR_TYPES.LASER) {
+        await updateLaserData(actor.token, changes.system);
+      } else if (actor.type === ACTOR_TYPES.MIRROR) {
+        await updateMirrorData(actor.token, changes.system);
+      } else if (actor.type === ACTOR_TYPES.TRIGGER) {
+        await updateTriggerData(actor.token, changes.system);
+      }
+    } else if (!actor.isToken) {
+      // World actor update: sync only linked tokens
+      const linkedTokens = canvas.scene?.tokens?.filter(t => t.actorId === actor.id && t.isLinked);
+      if (linkedTokens) {
+        for (const tokenDoc of linkedTokens) {
+          if (actor.type === ACTOR_TYPES.LASER) {
+            await updateLaserData(tokenDoc, changes.system);
+          } else if (actor.type === ACTOR_TYPES.MIRROR) {
+            await updateMirrorData(tokenDoc, changes.system);
+          } else if (actor.type === ACTOR_TYPES.TRIGGER) {
+            await updateTriggerData(tokenDoc, changes.system);
+          }
         }
       }
     }
@@ -46,6 +58,7 @@ async function onUpdateActor(actor, changes, options, userId) {
 
   refreshBeams();
 }
+
 
 /**
  * Pre-create hook for Actor documents.

@@ -53,9 +53,12 @@ export async function updateMirrorData(tokenDoc, changes) {
   await doc.update(updateData, { animate: false });
 
   if (doc.actor && doc.actor.type === ACTOR_TYPES.MIRROR) {
-    await doc.actor.update({ system: changes });
+    if (doc.actor.isToken || doc.isLinked) {
+      await doc.actor.update({ system: changes });
+    }
   }
 }
+
 
 /**
  * Get all mirror tokens in the current scene.

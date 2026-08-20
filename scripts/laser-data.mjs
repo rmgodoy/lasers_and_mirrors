@@ -55,9 +55,12 @@ export async function updateLaserData(tokenDoc, changes) {
   await doc.update(updateData);
 
   if (doc.actor && doc.actor.type === ACTOR_TYPES.LASER) {
-    await doc.actor.update({ system: changes });
+    if (doc.actor.isToken || doc.isLinked) {
+      await doc.actor.update({ system: changes });
+    }
   }
 }
+
 
 /**
  * Get all laser tokens in the current scene.

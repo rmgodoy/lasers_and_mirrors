@@ -40,9 +40,12 @@ export async function updateTriggerData(tokenDoc, changes) {
   await doc.update(updateData);
 
   if (doc.actor && doc.actor.type === ACTOR_TYPES.TRIGGER) {
-    await doc.actor.update({ system: changes });
+    if (doc.actor.isToken || doc.isLinked) {
+      await doc.actor.update({ system: changes });
+    }
   }
 }
+
 
 /**
  * Get all trigger tokens in the current scene.
