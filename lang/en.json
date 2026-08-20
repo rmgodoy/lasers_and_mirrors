@@ -52,14 +52,18 @@
       "toggleLaser": "Toggle Laser Beam",
       "attachLaser": "Attach Laser to Target",
       "detachLaser": "Detach Laser",
+      "pickUpLaser": "Pick Up Laser",
+      "dropLaser": "Drop Laser",
       "configureTrigger": "Configure Trigger"
     },
     "notify": {
-      "notAdjacent": "You must be adjacent to the mirror to adjust it.",
-      "laserAttached": "Laser attached to target token.",
+      "notAdjacent": "You must be adjacent to interact with this token.",
+      "noPlayerToken": "You need a player token to pick up the laser.",
+      "laserAttached": "Laser attached to token.",
       "laserDetached": "Laser detached.",
       "laserToggled": "Laser state toggled."
     },
+
     "controls": {
       "createLaser": "Create Laser Token",
       "createMirror": "Create Mirror Token",

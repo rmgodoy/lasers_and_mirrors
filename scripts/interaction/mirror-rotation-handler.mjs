@@ -113,10 +113,10 @@ function _onPointerUp(event) {
     const tokenDoc = rotatableToken.document;
     const isLaserToken = isLaser(tokenDoc);
 
-    // If it's a laser and not GM, verify interactable flag
+    // If it's a laser and not GM, verify interactable or attachable flag
     if (isLaserToken && !game.user.isGM) {
       const laserData = getLaserData(tokenDoc);
-      if (!laserData.interactable) {
+      if (!laserData.interactable && !laserData.attachable) {
         return;
       }
     }
@@ -129,6 +129,7 @@ function _onPointerUp(event) {
         return;
       }
     }
+
 
     // Dismiss any previous HUD and show on the new rotatable token
     _dismissHUD();
