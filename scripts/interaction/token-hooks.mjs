@@ -1,6 +1,7 @@
 import { MODULE_ID, ACTOR_TYPES, LASER_DEFAULTS, MIRROR_DEFAULTS, TRIGGER_DEFAULTS } from "../constants.mjs";
-import { isLaser } from "../laser-data.mjs";
+import { isLaser, getLaserData, updateLaserData } from "../laser-data.mjs";
 import { isMirror, getMirrorData, updateMirrorData } from "../mirror-data.mjs";
+
 import { isTrigger } from "../trigger-data.mjs";
 import { isModuleToken } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
