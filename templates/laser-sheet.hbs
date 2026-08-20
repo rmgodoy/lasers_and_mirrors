@@ -1,0 +1,42 @@
+<div class="lasers-and-mirrors-sheet">
+  <h2>{{localize "LAM.sheets.laser.title"}}</h2>
+
+  <div class="form-group">
+    <label for="color">{{localize "LAM.labels.color"}}</label>
+    <input type="color" name="color" value="{{color}}"/>
+  </div>
+
+  <div class="form-group">
+    <label for="width">{{localize "LAM.labels.width"}}</label>
+    <input type="range" name="width" min="1" max="20" step="1" value="{{width}}"/>
+    <span class="range-value">{{width}}</span>
+  </div>
+
+  <div class="form-group">
+    <label for="range">{{localize "LAM.labels.range"}}</label>
+    <input type="number" name="range" min="1" max="100" step="1" value="{{range}}"/>
+  </div>
+
+  <div class="form-group">
+    <label for="intensity">{{localize "LAM.labels.intensity"}}</label>
+    <input type="range" name="intensity" min="0.1" max="1" step="0.1" value="{{intensity}}"/>
+    <span class="range-value">{{intensity}}</span>
+  </div>
+
+  <div class="form-group">
+    <label for="visible">{{localize "LAM.labels.visible"}}</label>
+    <input type="checkbox" name="visible" {{checked visible}}/>
+  </div>
+
+  <div class="form-group">
+    <label for="interactable">{{localize "LAM.labels.interactable"}}</label>
+    <input type="checkbox" name="interactable" {{checked interactable}}/>
+  </div>
+
+  <div class="form-group">
+    <label for="attachable">{{localize "LAM.labels.attachable"}}</label>
+    <input type="checkbox" name="attachable" {{checked attachable}}/>
+  </div>
+
+  <button type="submit"><i class="fas fa-save"></i> {{localize "Save"}}</button>
+</div>
