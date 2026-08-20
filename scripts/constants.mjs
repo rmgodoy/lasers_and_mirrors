@@ -38,3 +38,13 @@ export const MIRROR_DEFAULTS = {
   width: 1,
   orientation: 0,
 };
+
+/**
+ * Prefixed Item types as registered by Foundry from module.json documentTypes.
+ * Foundry auto-prefixes module subtypes: "laser" becomes "LasersAndMirrors.laser".
+ * Use these when comparing item.type values.
+ */
+export const ITEM_TYPES = {
+  LASER: `${MODULE_ID}.laser`,
+  MIRROR: `${MODULE_ID}.mirror`,
+};
