@@ -1,7 +1,7 @@
 import { MODULE_ID, TYPES, FLAGS } from "../constants.mjs";
 import { isLaser, getLaserData } from "../laser-data.mjs";
 import { isMirror, getMirrorData } from "../mirror-data.mjs";
-import { isTrigger } from "../trigger-data.mjs";
+import { isTrigger, getTriggerData } from "../trigger-data.mjs";
 
 /**
  * Get the module type of a token ("laser", "mirror", "trigger", or null).

@@ -3,7 +3,7 @@ import { isLaser, getLaserData, updateLaserData } from "../laser-data.mjs";
 import { isMirror, getMirrorData, updateMirrorData } from "../mirror-data.mjs";
 
 import { isTrigger } from "../trigger-data.mjs";
-import { isModuleToken } from "../utils/token-helpers.mjs";
+import { isModuleToken, applyTokenMeshOffset } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 import { syncAttachedObjects, handleTokenDeletion } from "./attachment.mjs";
 import { refreshActiveHUD } from "./mirror-rotation-handler.mjs";
@@ -193,35 +193,6 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
 async function onDeleteToken(tokenDoc, options, userId) {
   await handleTokenDeletion(tokenDoc);
   refreshBeams();
-}
-
-/**
- * Apply anchorRadius visual offset to a token's mesh position.
- * If anchorRadius is non-zero, moves the mesh in the direction the token is facing.
- * @param {Token} token
- */
-export function applyTokenMeshOffset(token) {
-  if (!token?.mesh || !token?.document) return;
-  const doc = token.document;
-  if (!isModuleToken(doc)) return;
-
-  const data = isLaser(doc) ? getLaserData(doc) : (isMirror(doc) ? getMirrorData(doc) : getTriggerData(doc));
-  const radius = Number(data?.anchorRadius ?? 0);
-  const gridSize = canvas?.grid?.size ?? 100;
-  const baseCenter = {
-    x: (doc.x ?? 0) + ((doc.width ?? 1) * gridSize) / 2,
-    y: (doc.y ?? 0) + ((doc.height ?? 1) * gridSize) / 2,
-  };
-
-  if (radius !== 0) {
-    const rotDeg = doc.rotation ?? data?.orientation ?? 0;
-    const rad = (rotDeg * Math.PI) / 180;
-    const fx = -Math.sin(rad);
-    const fy = Math.cos(rad);
-    token.mesh.position.set(baseCenter.x + fx * radius * gridSize, baseCenter.y + fy * radius * gridSize);
-  } else {
-    token.mesh.position.set(baseCenter.x, baseCenter.y);
-  }
 }
 
 /**
