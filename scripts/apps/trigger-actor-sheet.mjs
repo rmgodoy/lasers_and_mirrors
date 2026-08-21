@@ -40,6 +40,7 @@ export class TriggerActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) 
     const context = await super._prepareContext(options);
     const tokenDoc = this.document.token;
     const data = tokenDoc ? getTriggerData(tokenDoc) : (this.document.system ?? {});
+    context.anchorRadius = data.anchorRadius ?? TRIGGER_DEFAULTS.anchorRadius;
     context.enabled = data.enabled ?? TRIGGER_DEFAULTS.enabled;
     context.passThrough = data.passThrough ?? TRIGGER_DEFAULTS.passThrough;
     context.onBeamHit = data.onBeamHit ?? TRIGGER_DEFAULTS.onBeamHit;
@@ -53,6 +54,7 @@ export class TriggerActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) 
    */
   static async onSubmit(event, form, formData) {
     const data = formData.object;
+    if ("anchorRadius" in data) data.anchorRadius = Number(data.anchorRadius) || 0;
     data.enabled = Boolean(data.enabled);
     data.passThrough = Boolean(data.passThrough);
     data.onBeamHit = data.onBeamHit ?? "";

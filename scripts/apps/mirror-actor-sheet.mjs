@@ -49,6 +49,7 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.color = data.color ?? MIRROR_DEFAULTS.color;
     context.width = data.width ?? MIRROR_DEFAULTS.width;
     context.orientation = currentOrientation;
+    context.anchorRadius = data.anchorRadius ?? MIRROR_DEFAULTS.anchorRadius;
     context.twoSided = data.twoSided ?? MIRROR_DEFAULTS.twoSided;
     context.interactable = data.interactable ?? MIRROR_DEFAULTS.interactable;
     context.interactionRange = data.interactionRange ?? MIRROR_DEFAULTS.interactionRange;
@@ -145,6 +146,7 @@ export class MirrorActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const data = formData.object;
     if ("width" in data) data.width = Number(data.width);
     if ("orientation" in data) data.orientation = Number(data.orientation);
+    if ("anchorRadius" in data) data.anchorRadius = Number(data.anchorRadius) || 0;
     data.twoSided = Boolean(data.twoSided);
     data.interactable = Boolean(data.interactable);
     if ("interactionRange" in data) data.interactionRange = Math.max(1, Number(data.interactionRange) || 1);

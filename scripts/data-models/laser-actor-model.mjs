@@ -35,6 +35,11 @@ export class LaserActorModel extends foundry.abstract.TypeDataModel {
         max: 360,
         step: 0.1,
       }),
+      anchorRadius: new fields.NumberField({
+        required: true,
+        initial: 0,
+        step: 0.05,
+      }),
       visible: new fields.BooleanField({ initial: true }),
       emitLight: new fields.BooleanField({ initial: true }),
       lightRadius: new fields.NumberField({

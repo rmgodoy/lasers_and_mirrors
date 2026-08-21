@@ -178,6 +178,8 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
   // Refresh beams if flags changed, position/rotation changed, or if it's any module token
   const hasModuleFlagChange = Boolean(changes.flags?.[MODULE_ID]);
   if (hasModuleFlagChange || posChanged || isModuleToken(tokenDoc)) {
+    const token = tokenDoc.object ?? canvas.tokens?.get(tokenDoc.id);
+    if (token) applyTokenMeshOffset(token);
     refreshBeams();
   }
 }
@@ -194,12 +196,42 @@ async function onDeleteToken(tokenDoc, options, userId) {
 }
 
 /**
+ * Apply anchorRadius visual offset to a token's mesh position.
+ * If anchorRadius is non-zero, moves the mesh in the direction the token is facing.
+ * @param {Token} token
+ */
+export function applyTokenMeshOffset(token) {
+  if (!token?.mesh || !token?.document) return;
+  const doc = token.document;
+  if (!isModuleToken(doc)) return;
+
+  const data = isLaser(doc) ? getLaserData(doc) : (isMirror(doc) ? getMirrorData(doc) : getTriggerData(doc));
+  const radius = Number(data?.anchorRadius ?? 0);
+  const gridSize = canvas?.grid?.size ?? 100;
+  const baseCenter = {
+    x: (doc.x ?? 0) + ((doc.width ?? 1) * gridSize) / 2,
+    y: (doc.y ?? 0) + ((doc.height ?? 1) * gridSize) / 2,
+  };
+
+  if (radius !== 0) {
+    const rotDeg = doc.rotation ?? data?.orientation ?? 0;
+    const rad = (rotDeg * Math.PI) / 180;
+    const fx = -Math.sin(rad);
+    const fy = Math.cos(rad);
+    token.mesh.position.set(baseCenter.x + fx * radius * gridSize, baseCenter.y + fy * radius * gridSize);
+  } else {
+    token.mesh.position.set(baseCenter.x, baseCenter.y);
+  }
+}
+
+/**
  * Called when a token's visual state is refreshed (e.g., during drag).
  * Use this for real-time beam updates while dragging.
  * @param {Token} token
  * @param {object} flags
  */
 function onRefreshToken(token, flags) {
+  applyTokenMeshOffset(token);
   refreshActiveHUD(token);
   if (isModuleToken(token.document)) {
     refreshBeams();

@@ -18,7 +18,7 @@ import {
   isMirrorAttachedTo,
   isAttachedTo,
 } from "./attachment.mjs";
-import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
+import { areTokensAdjacent, getPlayerToken, applyTokenMeshOffset } from "../utils/token-helpers.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 import { isAngleInArc, clampAngleToArc, angularDistance, normalizeAngle } from "../utils/angle-limits.mjs";
 import { dismissActiveHUD } from "./mirror-rotation-handler.mjs";
@@ -917,6 +917,7 @@ export class MirrorHUD extends PIXI.Container {
     if (this.token?.renderFlags) {
       this.token.renderFlags.set({ refreshRotation: true });
     }
+    applyTokenMeshOffset(this.token);
     refreshBeams();
   }
 

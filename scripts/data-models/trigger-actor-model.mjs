@@ -6,6 +6,11 @@ export class TriggerActorModel extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     const fields = foundry.data.fields;
     return {
+      anchorRadius: new fields.NumberField({
+        required: true,
+        initial: 0,
+        step: 0.05,
+      }),
       enabled: new fields.BooleanField({ initial: true }),
       passThrough: new fields.BooleanField({ initial: false }),
       onBeamHit: new fields.StringField({

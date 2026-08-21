@@ -50,6 +50,7 @@ export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.range = data.range ?? LASER_DEFAULTS.range;
     context.intensity = data.intensity ?? LASER_DEFAULTS.intensity;
     context.orientation = currentOrientation;
+    context.anchorRadius = data.anchorRadius ?? LASER_DEFAULTS.anchorRadius;
     context.visible = data.visible ?? LASER_DEFAULTS.visible;
     context.emitLight = data.emitLight ?? LASER_DEFAULTS.emitLight;
     context.lightRadius = data.lightRadius ?? LASER_DEFAULTS.lightRadius;
@@ -160,6 +161,7 @@ export class LaserActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     data.intensity = Number(data.intensity);
     if ("lightRadius" in data) data.lightRadius = Number(data.lightRadius);
     if ("orientation" in data) data.orientation = Number(data.orientation);
+    if ("anchorRadius" in data) data.anchorRadius = Number(data.anchorRadius) || 0;
     if ("minDeg" in data) data.minDeg = Number(data.minDeg);
     if ("maxDeg" in data) data.maxDeg = Number(data.maxDeg);
 

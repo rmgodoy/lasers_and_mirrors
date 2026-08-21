@@ -50,6 +50,7 @@ export class TriggerTokenConfigSheet extends HandlebarsApplicationMixin(Applicat
   async _prepareContext(options) {
     const data = getTriggerData(this.tokenDoc);
     return {
+      anchorRadius: data.anchorRadius ?? 0,
       enabled: data.enabled,
       passThrough: data.passThrough,
       onBeamHit: data.onBeamHit,
@@ -63,6 +64,7 @@ export class TriggerTokenConfigSheet extends HandlebarsApplicationMixin(Applicat
    */
   static async onSubmit(event, form, formData) {
     const data = formData.object;
+    if ("anchorRadius" in data) data.anchorRadius = Number(data.anchorRadius) || 0;
     data.enabled = Boolean(data.enabled);
     data.passThrough = Boolean(data.passThrough);
     data.onBeamHit = data.onBeamHit ?? "";

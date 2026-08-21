@@ -14,6 +14,7 @@ import { TriggerActorModel } from "./data-models/trigger-actor-model.mjs";
 import { LaserActorSheet } from "./apps/laser-actor-sheet.mjs";
 import { MirrorActorSheet } from "./apps/mirror-actor-sheet.mjs";
 import { TriggerActorSheet } from "./apps/trigger-actor-sheet.mjs";
+import { applyTokenMeshOffset } from "./utils/token-helpers.mjs";
 
 /**
  * Module initialization — register data models, settings, sheets, and hooks.
@@ -86,6 +87,13 @@ Hooks.once("ready", async () => {
 Hooks.on("canvasReady", async () => {
   console.log(`${MODULE_ID} | Canvas ready, initializing beam layer`);
   await initBeamLayer();
+
+  // Apply visual mesh offset to module tokens on scene load
+  if (canvas.tokens?.placeables) {
+    for (const token of canvas.tokens.placeables) {
+      applyTokenMeshOffset(token);
+    }
+  }
 
   // Unhide any laser tokens that were erroneously created with hidden: true
   if (game.user.isGM && canvas.scene) {

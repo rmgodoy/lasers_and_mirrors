@@ -58,6 +58,7 @@
       "invertLimits": "Invert Arc",
       "twoSided": "Two-Sided (Reflects Both Sides)",
       "orientation": "Orientation (Degrees)",
+      "anchorRadius": "Anchor Radius (Grids)",
       "enabled": "Enabled",
       "passThrough": "Beam Passes Through",
       "onBeamHit": "On Beam Hit (Macro)",

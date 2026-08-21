@@ -25,6 +25,8 @@ export const FLAGS = {
   // Mirror flags
   ORIENTATION: "orientation",
   TWO_SIDED: "twoSided",
+  // Anchor Offset
+  ANCHOR_RADIUS: "anchorRadius",
   // Trigger flags
   ENABLED: "enabled",
   PASS_THROUGH: "passThrough",
@@ -46,6 +48,7 @@ export const LASER_DEFAULTS = {
   range: 30,
   intensity: 0.8,
   orientation: 0,
+  anchorRadius: 0,
   visible: true,
   interactable: false,
   interactionRange: 1,
@@ -66,6 +69,7 @@ export const MIRROR_DEFAULTS = {
   color: "#c0c0c0",
   width: 1,
   orientation: 0,
+  anchorRadius: 0,
   twoSided: false,
   interactable: true,
   interactionRange: 1,
@@ -79,6 +83,7 @@ export const MIRROR_DEFAULTS = {
 
 export const TRIGGER_DEFAULTS = {
   type: "trigger",
+  anchorRadius: 0,
   enabled: true,
   passThrough: false,
   onBeamHit: "",
