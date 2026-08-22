@@ -33,11 +33,12 @@ export class SetGameFlagBehavior extends BaseBehavior {
   static async execute(config, context) {
     if (!config?.flagName) return;
 
-    const flagScope = config.flagScope || "world";
-    const flagName = config.flagName.trim();
+    const rawScope = config.flagScope || "world";
+    const flagScope = String(this.resolveValue(rawScope, context) || "world").trim();
+    const flagName = String(this.resolveValue(config.flagName, context) || "").trim();
     const resolvedValue = this.resolveValue(config.value, context);
 
-    if (canvas?.scene?.setFlag) {
+    if (flagName && canvas?.scene?.setFlag) {
       await canvas.scene.setFlag(flagScope, flagName, resolvedValue);
     }
   }

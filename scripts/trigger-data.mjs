@@ -62,3 +62,5 @@ export function getAllTriggers() {
   return canvas?.tokens?.placeables?.filter(t => isTrigger(t.document)) ?? [];
 }
 
+export { isTriggerHit } from "./canvas/beam-layer.mjs";
+

@@ -3,6 +3,7 @@ import "../scripts/behaviors/index.mjs";
 import { BehaviorRegistry } from "../scripts/behaviors/behavior-registry.mjs";
 import { BehaviorRunner, ExecutionContext } from "../scripts/behaviors/behavior-runner.mjs";
 import { BEHAVIOR_TYPES } from "../scripts/constants.mjs";
+import { isTriggerHit } from "../scripts/canvas/beam-layer.mjs";
 
 console.log("Running behaviors unit tests...");
 
@@ -141,7 +142,44 @@ assert.equal(pipelineContext.getVariable("result"), 6, "Macro updated variable c
 assert.equal(sceneFlags["world.finalScore"], 6, "SetFlag saved result correctly to scene");
 assert.equal(pipelineContext.stopped, false, "Pipeline completed without halting");
 
-// 6. Test Conditional Halting in Pipeline
+// 6. Test Default Variables: $thisTokenId, $thisTokenUuid, $thisActorId
+const mockToken = {
+  id: "token_abc123",
+  uuid: "Scene.1.Token.token_abc123",
+  actor: { id: "actor_xyz789" },
+};
+
+const defaultVarsContext = new ExecutionContext({ token: mockToken });
+assert.equal(defaultVarsContext.getVariable("thisTokenId"), "token_abc123", "thisTokenId is automatically available");
+assert.equal(defaultVarsContext.getVariable("thisTokenUuid"), "Scene.1.Token.token_abc123", "thisTokenUuid is automatically available");
+assert.equal(defaultVarsContext.getVariable("thisActorId"), "actor_xyz789", "thisActorId is automatically available");
+
+// Test SetFlag using $thisTokenId as the flag name
+const dynamicFlagPipeline = [
+  { type: BEHAVIOR_TYPES.SET_FLAG, flagScope: "world", flagName: "$thisTokenId", value: "active" },
+  { type: BEHAVIOR_TYPES.READ_FLAG, flagScope: "world", flagName: "$thisTokenId", variableName: "readBackVal" },
+];
+
+await BehaviorRunner.runSequence(dynamicFlagPipeline, defaultVarsContext);
+assert.equal(sceneFlags["world.token_abc123"], "active", "SetFlag dynamically resolved $thisTokenId as the flag name");
+assert.equal(defaultVarsContext.getVariable("readBackVal"), "active", "ReadFlag dynamically resolved $thisTokenId as flag name");
+
+// 7. Test ReadTriggerStateBehavior and trigger: prefix
+const readTriggerPipeline = [
+  { type: BEHAVIOR_TYPES.READ_TRIGGER, uuid: "Scene.1.Token.targetTrigger1", variableName: "t1Hit" },
+  { type: BEHAVIOR_TYPES.READ_TRIGGER, uuid: "targetTrigger2", variableName: "t2Hit" },
+  { type: BEHAVIOR_TYPES.CONDITIONAL, expression: "$t1Hit == true && $t2Hit == false" },
+  { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "puzzlePassed", value: true },
+];
+
+const readTriggerContext = new ExecutionContext();
+// Before hitting triggers
+await BehaviorRunner.runSequence(readTriggerPipeline, readTriggerContext);
+assert.equal(readTriggerContext.getVariable("t1Hit"), false);
+assert.equal(readTriggerContext.getVariable("t2Hit"), false);
+assert.equal(readTriggerContext.stopped, true, "Pipeline stopped because t1Hit was false");
+
+// 8. Test Conditional Halting in Pipeline
 const haltedPipeline = [
   { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "stepA", value: "ran" },
   { type: BEHAVIOR_TYPES.CONDITIONAL, left: "$stepA", operator: "==", right: "should_not_match" },

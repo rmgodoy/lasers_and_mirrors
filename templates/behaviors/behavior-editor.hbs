@@ -32,6 +32,8 @@
       {{> "modules/LasersAndMirrors/templates/behaviors/behavior-flag-set.hbs"}}
     {{else if isSetVariable}}
       {{> "modules/LasersAndMirrors/templates/behaviors/behavior-set-variable.hbs"}}
+    {{else if isReadTrigger}}
+      {{> "modules/LasersAndMirrors/templates/behaviors/behavior-trigger-read.hbs"}}
     {{else if isConditional}}
       {{> "modules/LasersAndMirrors/templates/behaviors/behavior-conditional.hbs"}}
     {{/if}}

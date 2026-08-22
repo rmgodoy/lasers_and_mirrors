@@ -18,7 +18,15 @@ export class ExecutionContext {
     this.actor = actor ?? this.tokenDoc?.actor;
     this.beamData = beamData;
     this.eventType = eventType;
-    this.variables = { ...variables };
+    const tokenId = this.tokenDoc?.id ?? "";
+    const tokenUuid = this.tokenDoc?.uuid ?? "";
+    const actorId = this.actor?.id ?? "";
+    this.variables = {
+      thisTokenId: tokenId,
+      thisTokenUuid: tokenUuid,
+      thisActorId: actorId,
+      ...variables,
+    };
     this.stopped = false;
     this.executionLog = [];
   }

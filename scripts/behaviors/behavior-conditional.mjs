@@ -58,7 +58,8 @@ export class ConditionalBehavior extends BaseBehavior {
 
   /** @override */
   static async execute(config, context) {
-    const target = config.mode === "expression"
+    const isExpr = config.mode === "expression" || (!config.left && Boolean(config.expression));
+    const target = isExpr
       ? (config.expression ?? "")
       : {
           left: config.left,

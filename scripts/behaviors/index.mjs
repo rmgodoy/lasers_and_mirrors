@@ -6,6 +6,7 @@ import { MacroCallBehavior } from "./behavior-macro.mjs";
 import { ReadGameFlagBehavior } from "./behavior-read-flag.mjs";
 import { SetGameFlagBehavior } from "./behavior-set-flag.mjs";
 import { SetVariableBehavior } from "./behavior-set-variable.mjs";
+import { ReadTriggerStateBehavior } from "./behavior-read-trigger.mjs";
 import { ConditionalBehavior } from "./behavior-conditional.mjs";
 
 /**
@@ -19,6 +20,7 @@ export function registerAllBehaviors() {
   BehaviorRegistry.register(ReadGameFlagBehavior);
   BehaviorRegistry.register(SetGameFlagBehavior);
   BehaviorRegistry.register(SetVariableBehavior);
+  BehaviorRegistry.register(ReadTriggerStateBehavior);
   BehaviorRegistry.register(ConditionalBehavior);
 }
 
@@ -34,5 +36,6 @@ export {
   ReadGameFlagBehavior,
   SetGameFlagBehavior,
   SetVariableBehavior,
+  ReadTriggerStateBehavior,
   ConditionalBehavior,
 };

@@ -34,11 +34,15 @@ export class ReadGameFlagBehavior extends BaseBehavior {
   static async execute(config, context) {
     if (!config?.flagName) return;
 
-    const flagScope = config.flagScope || "world";
-    const flagName = config.flagName.trim();
-    const varName = (config.variableName || flagName || config.id).trim();
+    const rawScope = config.flagScope || "world";
+    const flagScope = String(this.resolveValue(rawScope, context) || "world").trim();
+    const flagName = String(this.resolveValue(config.flagName, context) || "").trim();
+    const rawVar = config.variableName || config.flagName || config.id;
+    const varName = String(this.resolveValue(rawVar, context) || config.id).replace(/^\$/, "").trim();
 
-    const value = canvas?.scene?.getFlag?.(flagScope, flagName);
-    context.setVariable(varName, value);
+    if (flagName) {
+      const value = canvas?.scene?.getFlag?.(flagScope, flagName);
+      context.setVariable(varName, value);
+    }
   }
 }

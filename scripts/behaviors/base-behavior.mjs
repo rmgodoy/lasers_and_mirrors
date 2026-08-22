@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../constants.mjs";
+import { isTriggerHit } from "../canvas/beam-layer.mjs";
 
 /**
  * Abstract base class for all Trigger behaviors.
@@ -96,6 +97,15 @@ export class BaseBehavior {
     if (trimmed.startsWith("flag:")) {
       const flagName = trimmed.slice(5);
       return canvas?.scene?.getFlag?.("world", flagName) ?? undefined;
+    }
+
+    // Trigger hit state reference: trigger:tokenId or trigger:$var
+    if (trimmed.startsWith("trigger:")) {
+      let target = trimmed.slice(8).trim();
+      if (target.startsWith("$")) {
+        target = context?.variables?.[target.slice(1)] ?? target;
+      }
+      return isTriggerHit(target);
     }
 
     // Explicit string quotes: "text" or 'text' -> unquote literal string

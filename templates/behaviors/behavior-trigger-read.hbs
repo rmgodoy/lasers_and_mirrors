@@ -1,0 +1,14 @@
+<div class="lam-behavior-form">
+  <div class="form-group">
+    <label for="uuid">{{localize "LAM.behaviors.readTrigger.uuid"}}</label>
+    <input type="text" name="uuid" value="{{config.uuid}}" placeholder="Scene.xxxx.Token.xxxx or token-id or $var" required/>
+  </div>
+
+  <div class="form-group">
+    <label for="variableName">{{localize "LAM.behaviors.readTrigger.variableName"}}</label>
+    <div class="lam-input-with-prefix">
+      <span class="lam-prefix">$</span>
+      <input type="text" name="variableName" value="{{config.variableName}}" placeholder="e.g. isTrigger2Hit"/>
+    </div>
+  </div>
+</div>

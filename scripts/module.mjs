@@ -68,6 +68,7 @@ Hooks.once("init", () => {
     `modules/${MODULE_ID}/templates/behaviors/behavior-flag-read.hbs`,
     `modules/${MODULE_ID}/templates/behaviors/behavior-flag-set.hbs`,
     `modules/${MODULE_ID}/templates/behaviors/behavior-set-variable.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-trigger-read.hbs`,
     `modules/${MODULE_ID}/templates/behaviors/behavior-conditional.hbs`,
   ];
   const loadTpls = foundry.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;

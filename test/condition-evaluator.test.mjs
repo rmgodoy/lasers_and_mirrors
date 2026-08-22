@@ -110,6 +110,25 @@ assert.equal(
   "Word OR should evaluate to true"
 );
 
+// Test NAND and double negation: !(!!$trigger_1 && !!$trigger_2)
+const nandExpr = "!(!!$trigger_1 && !!$trigger_2)";
+assert.equal(ConditionEvaluator.evaluateExpression(nandExpr, new ExecutionContext({ variables: { trigger_1: true, trigger_2: true } })), false, "NAND (T, T) -> false");
+assert.equal(ConditionEvaluator.evaluateExpression(nandExpr, new ExecutionContext({ variables: { trigger_1: true, trigger_2: false } })), true, "NAND (T, F) -> true");
+assert.equal(ConditionEvaluator.evaluateExpression(nandExpr, new ExecutionContext({ variables: { trigger_1: false, trigger_2: false } })), true, "NAND (F, F) -> true");
+assert.equal(ConditionEvaluator.evaluateExpression(nandExpr, new ExecutionContext({ variables: { trigger_1: 1, trigger_2: 1 } })), false, "NAND (1, 1) -> false");
+assert.equal(ConditionEvaluator.evaluateExpression(nandExpr, new ExecutionContext({ variables: { trigger_1: 0, trigger_2: 1 } })), true, "NAND (0, 1) -> true");
+assert.equal(ConditionEvaluator.evaluateExpression(nandExpr, new ExecutionContext({ variables: { trigger_1: "uuid", trigger_2: null } })), true, "NAND (str, null) -> true");
+
+// Also simplified !($trigger_1 && $trigger_2)
+const simpleNand = "!($trigger_1 && $trigger_2)";
+assert.equal(ConditionEvaluator.evaluateExpression(simpleNand, new ExecutionContext({ variables: { trigger_1: true, trigger_2: true } })), false);
+assert.equal(ConditionEvaluator.evaluateExpression(simpleNand, new ExecutionContext({ variables: { trigger_1: true, trigger_2: false } })), true);
+assert.equal(ConditionEvaluator.evaluateExpression(simpleNand, new ExecutionContext({ variables: { trigger_1: false, trigger_2: false } })), true);
+
+// Test direct trigger:tokenId prefix in expressions
+assert.equal(ConditionEvaluator.evaluateExpression("trigger:trig1 == false", new ExecutionContext()), true);
+assert.equal(ConditionEvaluator.evaluateExpression("!(trigger:trig1 && trigger:trig2)", new ExecutionContext()), true);
+
 // 5. Test BehaviorRunner with conditional flow control
 class MockSetVarBehavior extends BaseBehavior {
   static type = "mockSetVar";

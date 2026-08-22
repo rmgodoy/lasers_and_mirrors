@@ -176,6 +176,11 @@
         "name": "Variable Name ($name)",
         "value": "Variable Value"
       },
+      "readTrigger": {
+        "label": "Read Trigger State",
+        "uuid": "Target Trigger Token UUID / ID",
+        "variableName": "Store Hit State In ($name)"
+      },
       "conditional": {
         "label": "Conditional (Halt if False)",
         "mode": "Condition Mode",

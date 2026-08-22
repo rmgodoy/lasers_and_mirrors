@@ -52,6 +52,7 @@ export const BEHAVIOR_TYPES = {
   READ_FLAG: "readFlag",
   SET_FLAG: "setFlag",
   SET_VARIABLE: "setVariable",
+  READ_TRIGGER: "readTrigger",
   CONDITIONAL: "conditional",
 };
 

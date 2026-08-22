@@ -62,6 +62,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       `modules/${MODULE_ID}/templates/behaviors/behavior-flag-read.hbs`,
       `modules/${MODULE_ID}/templates/behaviors/behavior-flag-set.hbs`,
       `modules/${MODULE_ID}/templates/behaviors/behavior-set-variable.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-trigger-read.hbs`,
       `modules/${MODULE_ID}/templates/behaviors/behavior-conditional.hbs`,
     ];
     const loadTpls = foundry.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;
@@ -99,6 +100,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       isReadFlag: type === BEHAVIOR_TYPES.READ_FLAG,
       isSetFlag: type === BEHAVIOR_TYPES.SET_FLAG,
       isSetVariable: type === BEHAVIOR_TYPES.SET_VARIABLE,
+      isReadTrigger: type === BEHAVIOR_TYPES.READ_TRIGGER,
       isConditional: type === BEHAVIOR_TYPES.CONDITIONAL,
       isClauseMode: this.config.mode !== "expression",
       isExpressionMode: this.config.mode === "expression",
@@ -245,6 +247,9 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     } else if (type === BEHAVIOR_TYPES.SET_VARIABLE) {
       finalConfig.name = (data.name ?? "").trim();
       finalConfig.value = data.value ?? "";
+    } else if (type === BEHAVIOR_TYPES.READ_TRIGGER) {
+      finalConfig.uuid = (data.uuid ?? "").trim();
+      finalConfig.variableName = (data.variableName ?? "").trim();
     } else if (type === BEHAVIOR_TYPES.CONDITIONAL) {
       finalConfig.mode = data.mode ?? "clause";
       finalConfig.left = data.left ?? "";
