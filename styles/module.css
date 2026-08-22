@@ -181,4 +181,384 @@
   white-space: nowrap;
 }
 
+/* ========================================================== */
+/* Trigger Sheet & Tabs                                      */
+/* ========================================================== */
+.lasers-and-mirrors-sheet .sheet-tabs {
+  display: flex;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 8px;
+  gap: 4px;
+}
+
+.lasers-and-mirrors-sheet .sheet-tabs .item {
+  padding: 6px 12px;
+  font-weight: bold;
+  color: #a0a090;
+  text-decoration: none;
+  border-radius: 4px 4px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.lasers-and-mirrors-sheet .sheet-tabs .item:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lasers-and-mirrors-sheet .sheet-tabs .item.active {
+  color: #ff6400;
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 100, 0, 0.12);
+  border-bottom: 2px solid #ff6400;
+  margin-bottom: -2px;
+}
+
+.lasers-and-mirrors-sheet .lam-tab-badge {
+  background: #ff6400;
+  color: #ffffff;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.lasers-and-mirrors-sheet .tab {
+  display: none;
+}
+
+.lasers-and-mirrors-sheet .tab.active {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lasers-and-mirrors-sheet .lam-tab-intro {
+  font-size: 11px;
+  color: #b0b0a0;
+  margin-bottom: 4px;
+}
+
+/* ========================================================== */
+/* Behavior Cards & List                                     */
+/* ========================================================== */
+.lasers-and-mirrors-sheet .lam-behavior-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 80px;
+}
+
+.lasers-and-mirrors-sheet .lam-behavior-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #ff6400;
+  border-radius: 4px;
+  padding: 6px 8px;
+  transition: all 0.15s;
+}
+
+.lasers-and-mirrors-sheet .lam-behavior-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 100, 0, 0.4);
+}
+
+.lasers-and-mirrors-sheet .lam-behavior-card.lam-disabled {
+  opacity: 0.5;
+  border-left-color: #7a7971;
+}
+
+.lasers-and-mirrors-sheet .lam-card-reorder {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-move {
+  padding: 1px 4px;
+  font-size: 9px;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  color: #8a8980;
+  cursor: pointer;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-move:hover:not(:disabled) {
+  color: #ffffff;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-move:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.lasers-and-mirrors-sheet .lam-card-icon {
+  font-size: 16px;
+  width: 24px;
+  text-align: center;
+  color: #00e5ff;
+}
+
+.lasers-and-mirrors-sheet .lam-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.lasers-and-mirrors-sheet .lam-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lasers-and-mirrors-sheet .lam-badge {
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #e0e0d0;
+}
+
+.lasers-and-mirrors-sheet .lam-badge-light { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
+.lasers-and-mirrors-sheet .lam-badge-door { background: rgba(139, 69, 19, 0.3); color: #deb887; }
+.lasers-and-mirrors-sheet .lam-badge-tile { background: rgba(70, 130, 180, 0.3); color: #87ceeb; }
+.lasers-and-mirrors-sheet .lam-badge-macro { background: rgba(147, 112, 219, 0.3); color: #ba55d3; }
+.lasers-and-mirrors-sheet .lam-badge-readFlag,
+.lasers-and-mirrors-sheet .lam-badge-setFlag { background: rgba(60, 179, 113, 0.3); color: #3cb371; }
+.lasers-and-mirrors-sheet .lam-badge-setVariable { background: rgba(0, 206, 209, 0.3); color: #00ced1; }
+.lasers-and-mirrors-sheet .lam-badge-conditional { background: rgba(255, 140, 0, 0.3); color: #ffa500; }
+
+.lasers-and-mirrors-sheet .lam-badge-disabled {
+  font-size: 9px;
+  padding: 1px 4px;
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff6b6b;
+  border-radius: 3px;
+}
+
+.lasers-and-mirrors-sheet .lam-card-summary {
+  font-size: 12px;
+  color: #d0d0c0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lasers-and-mirrors-sheet .lam-card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-empty-state {
+  text-align: center;
+  padding: 20px 10px;
+  color: #7a7971;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-empty-state i {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+
+.lasers-and-mirrors-sheet .lam-list-actions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ========================================================== */
+/* Common Buttons & Dialog Controls                           */
+/* ========================================================== */
+.lasers-and-mirrors-sheet .lam-btn-icon {
+  width: 26px;
+  height: 26px;
+  line-height: 24px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #7a7971;
+  border-radius: 3px;
+  color: #e0e0d0;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-danger:hover {
+  background: rgba(255, 0, 0, 0.3);
+  border-color: #ff4444;
+  color: #ff6b6b;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-primary {
+  background: rgba(255, 100, 0, 0.4);
+  border: 1px solid #ff6400;
+  color: #ffffff;
+  font-weight: bold;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-primary:hover {
+  background: rgba(255, 100, 0, 0.6);
+  box-shadow: 0 0 6px #ff6400;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid #7a7971;
+  color: #e0e0d0;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.lasers-and-mirrors-sheet .lam-btn-sm {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+/* ========================================================== */
+/* Behavior Editor Form & Properties List                    */
+/* ========================================================== */
+.lasers-and-mirrors-sheet.lam-dialog-window {
+  min-width: 460px;
+}
+
+.lasers-and-mirrors-sheet .lam-properties-section {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lasers-and-mirrors-sheet .lam-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lasers-and-mirrors-sheet .lam-section-header h4 {
+  margin: 0;
+  font-size: 13px;
+  color: #ff9944;
+}
+
+.lasers-and-mirrors-sheet .lam-prop-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-prop-select {
+  flex: 1.2;
+}
+
+.lasers-and-mirrors-sheet .lam-prop-value {
+  flex: 1.5;
+}
+
+.lasers-and-mirrors-sheet .lam-input-with-prefix {
+  display: flex;
+  align-items: center;
+  flex: 2;
+  gap: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-prefix {
+  font-weight: bold;
+  color: #00e5ff;
+  font-size: 14px;
+}
+
+.lasers-and-mirrors-sheet .lam-code-editor {
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  background: rgba(0, 0, 0, 0.4);
+  color: #a8ff78;
+  border: 1px solid #7a7971;
+  border-radius: 4px;
+  padding: 8px;
+  width: 100%;
+}
+
+.lasers-and-mirrors-sheet .lam-macro-help {
+  font-size: 11px;
+  color: #a0a090;
+  background: rgba(0, 229, 255, 0.05);
+  border-left: 3px solid #00e5ff;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  border-radius: 2px;
+}
+
+.lasers-and-mirrors-sheet .lam-macro-help code {
+  color: #00e5ff;
+}
+
+.lasers-and-mirrors-sheet .lam-radio-group {
+  display: flex;
+  gap: 16px;
+  flex: 2;
+}
+
+.lasers-and-mirrors-sheet .lam-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.lasers-and-mirrors-sheet .lam-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lasers-and-mirrors-sheet .lam-hint {
+  font-size: 11px;
+  color: #8a8980;
+  margin-top: 4px;
+}
+
 

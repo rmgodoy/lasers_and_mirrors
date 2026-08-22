@@ -1,0 +1,33 @@
+<div class="lam-behavior-form">
+  <div class="form-group">
+    <label for="uuid">{{localize "LAM.behaviors.tile.uuid"}}</label>
+    <input type="text" name="uuid" value="{{config.uuid}}" placeholder="Scene.xxxx.Tile.xxxx or tile-id" required/>
+  </div>
+
+  <div class="lam-properties-section">
+    <div class="lam-section-header">
+      <h4>{{localize "LAM.behaviors.tile.propertiesHeader"}}</h4>
+      <button type="button" class="lam-btn-secondary lam-btn-sm lam-btn-add-prop" title="{{localize 'LAM.behaviors.common.addProperty'}}">
+        <i class="fas fa-plus"></i> {{localize "LAM.behaviors.common.addProperty"}}
+      </button>
+    </div>
+
+    <div class="lam-properties-list">
+      {{#each config.properties}}
+      <div class="lam-prop-row" data-index="{{@index}}">
+        <select name="prop_property_{{@index}}" class="lam-prop-select">
+          {{#each ../propertyOptions}}
+          <option value="{{this.value}}" {{#if (eq this.value ../property)}}selected{{/if}}>
+            {{localize this.label}} ({{this.value}})
+          </option>
+          {{/each}}
+        </select>
+        <input type="text" name="prop_value_{{@index}}" value="{{this.value}}" placeholder="Value (e.g. true, false, 0.5, $var)" class="lam-prop-value"/>
+        <button type="button" class="lam-btn-icon lam-btn-danger lam-btn-remove-prop" data-index="{{@index}}" title="{{localize 'LAM.behaviors.common.removeProperty'}}" {{#if (eq ../config.properties.length 1)}}disabled{{/if}}>
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</div>

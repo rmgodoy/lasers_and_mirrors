@@ -65,13 +65,128 @@
       "onBeamStay": "On Beam Stay (Macro, 500ms loop)",
       "onBeamLost": "On Beam Lost (Macro)"
     },
+    "tabs": {
+      "general": "General",
+      "enter": "On Beam Enter",
+      "stay": "On Beam Stay",
+      "exit": "On Beam Exit"
+    },
+    "descriptions": {
+      "enterBehaviors": "Sequence of behaviors executed once when a laser beam first hits this trigger.",
+      "stayBehaviors": "Sequence of behaviors executed repeatedly every 500ms while a beam stays on this trigger.",
+      "exitBehaviors": "Sequence of behaviors executed once when the laser beam leaves this trigger.",
+      "noBehaviorsEnter": "No behaviors configured for Beam Enter. Click '+ Add Behavior' below to create one.",
+      "noBehaviorsStay": "No behaviors configured for Beam Stay. Click '+ Add Behavior' below to create one.",
+      "noBehaviorsExit": "No behaviors configured for Beam Exit. Click '+ Add Behavior' below to create one."
+    },
     "buttons": {
       "setCurrentMin": "Set Current Orientation as Min Angle",
       "setCurrentMinShort": "Current",
       "setCurrentMax": "Set Current Orientation as Max Angle",
       "setCurrentMaxShort": "Current",
       "flipLimits": "Flip Allowed Side",
-      "flipLimitsHint": "Flip which side of the circular arc is the allowed rotation range"
+      "flipLimitsHint": "Flip which side of the circular arc is the allowed rotation range",
+      "addBehavior": "Add Behavior",
+      "moveUp": "Move Up",
+      "moveDown": "Move Down",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "common": {
+      "disabled": "Disabled"
+    },
+    "behaviors": {
+      "editor": {
+        "title": "Configure Behavior",
+        "type": "Behavior Type"
+      },
+      "common": {
+        "enabled": "Enabled",
+        "addProperty": "Add Property",
+        "removeProperty": "Remove Property"
+      },
+      "light": {
+        "label": "Change Light Property",
+        "uuid": "Light Source UUID / ID",
+        "propertiesHeader": "Modified Light Properties",
+        "props": {
+          "dim": "Dim Radius (Grids)",
+          "bright": "Bright Radius (Grids)",
+          "color": "Light Color (Hex)",
+          "alpha": "Intensity / Alpha (0-1)",
+          "angle": "Emission Angle (0-360°)",
+          "animType": "Animation Type",
+          "animSpeed": "Animation Speed (1-10)",
+          "animIntensity": "Animation Intensity (1-10)",
+          "darknessMin": "Min Darkness (0-1)",
+          "darknessMax": "Max Darkness (0-1)",
+          "luminosity": "Luminosity (-1 to 1)",
+          "hidden": "Hidden / Disabled"
+        }
+      },
+      "door": {
+        "label": "Change Door Property",
+        "uuid": "Door / Wall UUID / ID",
+        "propertiesHeader": "Modified Door Properties",
+        "props": {
+          "doorState": "Door State (0=Closed, 1=Open, 2=Locked)",
+          "doorType": "Door Type (0=None, 1=Door, 2=Secret)",
+          "doorSound": "Door Sound"
+        }
+      },
+      "tile": {
+        "label": "Change Tile Property",
+        "uuid": "Tile UUID / ID",
+        "propertiesHeader": "Modified Tile Properties",
+        "props": {
+          "hidden": "Hidden (true/false)",
+          "alpha": "Opacity (0.0 to 1.0)",
+          "textureSrc": "Texture Image Path",
+          "textureTint": "Texture Tint Color",
+          "width": "Width (px)",
+          "height": "Height (px)",
+          "x": "X Position",
+          "y": "Y Position",
+          "rotation": "Rotation (Degrees)",
+          "overhead": "Overhead Roof Tile (true/false)",
+          "elevation": "Elevation",
+          "occlusionMode": "Occlusion Mode",
+          "occlusionAlpha": "Occlusion Opacity"
+        }
+      },
+      "macro": {
+        "label": "Macro Call",
+        "command": "JavaScript Code",
+        "contextHelp": "Macro executes with variables: "
+      },
+      "readFlag": {
+        "label": "Read Game Flag",
+        "scope": "Flag Scope (default: world)",
+        "flagName": "Flag Name",
+        "variableName": "Store In Local Variable ($name)"
+      },
+      "setFlag": {
+        "label": "Set Game Flag",
+        "scope": "Flag Scope (default: world)",
+        "flagName": "Flag Name",
+        "value": "Flag Value"
+      },
+      "setVariable": {
+        "label": "Set Variable",
+        "name": "Variable Name ($name)",
+        "value": "Variable Value"
+      },
+      "conditional": {
+        "label": "Conditional (Halt if False)",
+        "mode": "Condition Mode",
+        "modeClause": "Comparison Clause",
+        "modeExpression": "Logical Expression",
+        "leftOperand": "Left Operand ($var, flag:name, or value)",
+        "operator": "Comparison Operator",
+        "rightOperand": "Right Operand ($var, flag:name, or value)",
+        "expression": "Expression (e.g. ($hp > 0 || $hasKey == true) && flag:open == false)",
+        "expressionHint": "Supports AND (&&), OR (||), parentheses ( ), variables ($var), and scene flags (flag:name)."
+      }
     },
     "hud": {
       "adjustMirror": "Rotate Mirror",

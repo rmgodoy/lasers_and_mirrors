@@ -1,0 +1,46 @@
+<div class="lam-behavior-form">
+  <div class="form-group">
+    <label>{{localize "LAM.behaviors.conditional.mode"}}</label>
+    <div class="lam-radio-group">
+      <label class="lam-radio-label">
+        <input type="radio" name="mode" value="clause" {{#if (eq config.mode "clause")}}checked{{/if}} class="lam-conditional-mode-toggle"/>
+        {{localize "LAM.behaviors.conditional.modeClause"}}
+      </label>
+      <label class="lam-radio-label">
+        <input type="radio" name="mode" value="expression" {{#if (eq config.mode "expression")}}checked{{/if}} class="lam-conditional-mode-toggle"/>
+        {{localize "LAM.behaviors.conditional.modeExpression"}}
+      </label>
+    </div>
+  </div>
+
+  <div class="lam-clause-panel {{#if (eq config.mode 'expression')}}lam-hidden{{/if}}">
+    <div class="form-group">
+      <label for="left">{{localize "LAM.behaviors.conditional.leftOperand"}}</label>
+      <input type="text" name="left" value="{{config.left}}" placeholder="$varName or flag:name or literal value"/>
+    </div>
+
+    <div class="form-group">
+      <label for="operator">{{localize "LAM.behaviors.conditional.operator"}}</label>
+      <select name="operator" class="lam-operator-select">
+        {{#each operators}}
+        <option value="{{this.value}}" {{#if (eq this.value ../config.operator)}}selected{{/if}}>
+          {{this.label}} ({{this.value}})
+        </option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="right">{{localize "LAM.behaviors.conditional.rightOperand"}}</label>
+      <input type="text" name="right" value="{{config.right}}" placeholder="Comparison value or $otherVar"/>
+    </div>
+  </div>
+
+  <div class="lam-expression-panel {{#unless (eq config.mode 'expression')}}lam-hidden{{/unless}}">
+    <div class="form-group lam-macro-group">
+      <label for="expression">{{localize "LAM.behaviors.conditional.expression"}}</label>
+      <textarea name="expression" rows="4" placeholder="e.g. ($hp < 20 || $hasKey == true) && flag:doorClosed == true">{{config.expression}}</textarea>
+    </div>
+    <p class="lam-hint"><i class="fas fa-info-circle"></i> {{localize "LAM.behaviors.conditional.expressionHint"}}</p>
+  </div>
+</div>

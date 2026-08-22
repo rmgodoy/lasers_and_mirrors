@@ -1,0 +1,14 @@
+<div class="lam-behavior-form">
+  <div class="form-group">
+    <label for="name">{{localize "LAM.behaviors.setVariable.name"}}</label>
+    <div class="lam-input-with-prefix">
+      <span class="lam-prefix">$</span>
+      <input type="text" name="name" value="{{config.name}}" placeholder="e.g. counter" required/>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="value">{{localize "LAM.behaviors.setVariable.value"}}</label>
+    <input type="text" name="value" value="{{config.value}}" placeholder="e.g. 1, true, 'hello', $otherVar"/>
+  </div>
+</div>

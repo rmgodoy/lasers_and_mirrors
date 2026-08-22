@@ -1,0 +1,19 @@
+<div class="lam-behavior-form">
+  <div class="form-group">
+    <label for="flagScope">{{localize "LAM.behaviors.readFlag.scope"}}</label>
+    <input type="text" name="flagScope" value="{{config.flagScope}}" placeholder="world"/>
+  </div>
+
+  <div class="form-group">
+    <label for="flagName">{{localize "LAM.behaviors.readFlag.flagName"}}</label>
+    <input type="text" name="flagName" value="{{config.flagName}}" placeholder="e.g. puzzleSolved" required/>
+  </div>
+
+  <div class="form-group">
+    <label for="variableName">{{localize "LAM.behaviors.readFlag.variableName"}}</label>
+    <div class="lam-input-with-prefix">
+      <span class="lam-prefix">$</span>
+      <input type="text" name="variableName" value="{{config.variableName}}" placeholder="e.g. isSolved (defaults to flag name)"/>
+    </div>
+  </div>
+</div>

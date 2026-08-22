@@ -1,33 +1,207 @@
-<div class="lasers-and-mirrors-sheet">
+<div class="lasers-and-mirrors-sheet lam-trigger-sheet">
   <h2>{{localize "LAM.sheets.trigger.title"}}</h2>
 
-  <div class="form-group">
-    <label for="enabled">{{localize "LAM.labels.enabled"}}</label>
-    <input type="checkbox" name="enabled" {{checked enabled}}/>
-  </div>
+  <!-- Tab Navigation -->
+  <nav class="sheet-tabs tabs" aria-label="{{localize 'LAM.sheets.trigger.tabs'}}">
+    <a class="item {{#if (eq activeTab 'general')}}active{{/if}}" data-tab="general">
+      <i class="fas fa-sliders"></i> {{localize "LAM.tabs.general"}}
+    </a>
+    <a class="item {{#if (eq activeTab 'enter')}}active{{/if}}" data-tab="enter">
+      <i class="fas fa-arrow-right-to-bracket"></i> {{localize "LAM.tabs.enter"}}
+      {{#if behaviorsEnter.length}}<span class="lam-tab-badge">{{behaviorsEnter.length}}</span>{{/if}}
+    </a>
+    <a class="item {{#if (eq activeTab 'stay')}}active{{/if}}" data-tab="stay">
+      <i class="fas fa-spinner"></i> {{localize "LAM.tabs.stay"}}
+      {{#if behaviorsStay.length}}<span class="lam-tab-badge">{{behaviorsStay.length}}</span>{{/if}}
+    </a>
+    <a class="item {{#if (eq activeTab 'exit')}}active{{/if}}" data-tab="exit">
+      <i class="fas fa-arrow-right-from-bracket"></i> {{localize "LAM.tabs.exit"}}
+      {{#if behaviorsExit.length}}<span class="lam-tab-badge">{{behaviorsExit.length}}</span>{{/if}}
+    </a>
+  </nav>
 
-  <div class="form-group">
-    <label for="anchorRadius">{{localize "LAM.labels.anchorRadius"}}</label>
-    <input type="number" name="anchorRadius" step="0.05" value="{{anchorRadius}}"/>
-  </div>
+  <div class="sheet-body">
+    <!-- GENERAL TAB -->
+    <div class="tab {{#if (eq activeTab 'general')}}active{{/if}}" data-tab="general">
+      <div class="form-group">
+        <label for="enabled">{{localize "LAM.labels.enabled"}}</label>
+        <input type="checkbox" name="enabled" {{checked enabled}}/>
+      </div>
 
-  <div class="form-group">
-    <label for="passThrough">{{localize "LAM.labels.passThrough"}}</label>
-    <input type="checkbox" name="passThrough" {{checked passThrough}}/>
-  </div>
+      <div class="form-group">
+        <label for="anchorRadius">{{localize "LAM.labels.anchorRadius"}}</label>
+        <input type="number" name="anchorRadius" step="0.05" value="{{anchorRadius}}"/>
+      </div>
 
-  <div class="form-group lam-macro-group">
-    <label for="onBeamHit">{{localize "LAM.labels.onBeamHit"}}</label>
-    <textarea name="onBeamHit" rows="4" placeholder="// Runs once when beam first hits">{{onBeamHit}}</textarea>
-  </div>
+      <div class="form-group">
+        <label for="passThrough">{{localize "LAM.labels.passThrough"}}</label>
+        <input type="checkbox" name="passThrough" {{checked passThrough}}/>
+      </div>
+    </div>
 
-  <div class="form-group lam-macro-group">
-    <label for="onBeamStay">{{localize "LAM.labels.onBeamStay"}}</label>
-    <textarea name="onBeamStay" rows="4" placeholder="// Loops every 500ms while beam stays">{{onBeamStay}}</textarea>
-  </div>
+    <!-- ENTER TAB -->
+    <div class="tab {{#if (eq activeTab 'enter')}}active{{/if}}" data-tab="enter">
+      <div class="lam-tab-intro">
+        <p><i class="fas fa-bolt"></i> {{localize "LAM.descriptions.enterBehaviors"}}</p>
+      </div>
 
-  <div class="form-group lam-macro-group">
-    <label for="onBeamLost">{{localize "LAM.labels.onBeamLost"}}</label>
-    <textarea name="onBeamLost" rows="4" placeholder="// Runs once when beam leaves">{{onBeamLost}}</textarea>
+      <div class="lam-behavior-list" data-event-tab="enter">
+        {{#if behaviorsEnter.length}}
+          {{#each behaviorsEnter}}
+          <div class="lam-behavior-card {{#unless this.enabled}}lam-disabled{{/unless}}" data-index="{{@index}}">
+            <div class="lam-card-reorder">
+              <button type="button" class="lam-btn-icon lam-btn-move" data-action="moveBehavior" data-tab="enter" data-index="{{@index}}" data-direction="up" title="{{localize 'LAM.buttons.moveUp'}}" {{#if @first}}disabled{{/if}}>
+                <i class="fas fa-chevron-up"></i>
+              </button>
+              <button type="button" class="lam-btn-icon lam-btn-move" data-action="moveBehavior" data-tab="enter" data-index="{{@index}}" data-direction="down" title="{{localize 'LAM.buttons.moveDown'}}" {{#if @last}}disabled{{/if}}>
+                <i class="fas fa-chevron-down"></i>
+              </button>
+            </div>
+            <div class="lam-card-icon">
+              <i class="{{this.icon}}"></i>
+            </div>
+            <div class="lam-card-content">
+              <div class="lam-card-header">
+                <span class="lam-badge lam-badge-{{this.type}}">{{localize this.typeLabel}}</span>
+                {{#unless this.enabled}}<span class="lam-badge-disabled">{{localize "LAM.common.disabled"}}</span>{{/unless}}
+              </div>
+              <div class="lam-card-summary" title="{{this.summary}}">
+                {{this.summary}}
+              </div>
+            </div>
+            <div class="lam-card-actions">
+              <button type="button" class="lam-btn-icon" data-action="editBehavior" data-tab="enter" data-index="{{@index}}" title="{{localize 'LAM.buttons.edit'}}">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button type="button" class="lam-btn-icon lam-btn-danger" data-action="deleteBehavior" data-tab="enter" data-index="{{@index}}" title="{{localize 'LAM.buttons.delete'}}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          {{/each}}
+        {{else}}
+          <div class="lam-empty-state">
+            <i class="fas fa-layer-group"></i>
+            <p>{{localize "LAM.descriptions.noBehaviorsEnter"}}</p>
+          </div>
+        {{/if}}
+      </div>
+
+      <div class="lam-list-actions">
+        <button type="button" class="lam-btn-secondary lam-btn-add-behavior" data-action="addBehavior" data-tab="enter">
+          <i class="fas fa-plus"></i> {{localize "LAM.buttons.addBehavior"}}
+        </button>
+      </div>
+    </div>
+
+    <!-- STAY TAB -->
+    <div class="tab {{#if (eq activeTab 'stay')}}active{{/if}}" data-tab="stay">
+      <div class="lam-tab-intro">
+        <p><i class="fas fa-sync-alt"></i> {{localize "LAM.descriptions.stayBehaviors"}}</p>
+      </div>
+
+      <div class="lam-behavior-list" data-event-tab="stay">
+        {{#if behaviorsStay.length}}
+          {{#each behaviorsStay}}
+          <div class="lam-behavior-card {{#unless this.enabled}}lam-disabled{{/unless}}" data-index="{{@index}}">
+            <div class="lam-card-reorder">
+              <button type="button" class="lam-btn-icon lam-btn-move" data-action="moveBehavior" data-tab="stay" data-index="{{@index}}" data-direction="up" title="{{localize 'LAM.buttons.moveUp'}}" {{#if @first}}disabled{{/if}}>
+                <i class="fas fa-chevron-up"></i>
+              </button>
+              <button type="button" class="lam-btn-icon lam-btn-move" data-action="moveBehavior" data-tab="stay" data-index="{{@index}}" data-direction="down" title="{{localize 'LAM.buttons.moveDown'}}" {{#if @last}}disabled{{/if}}>
+                <i class="fas fa-chevron-down"></i>
+              </button>
+            </div>
+            <div class="lam-card-icon">
+              <i class="{{this.icon}}"></i>
+            </div>
+            <div class="lam-card-content">
+              <div class="lam-card-header">
+                <span class="lam-badge lam-badge-{{this.type}}">{{localize this.typeLabel}}</span>
+                {{#unless this.enabled}}<span class="lam-badge-disabled">{{localize "LAM.common.disabled"}}</span>{{/unless}}
+              </div>
+              <div class="lam-card-summary" title="{{this.summary}}">
+                {{this.summary}}
+              </div>
+            </div>
+            <div class="lam-card-actions">
+              <button type="button" class="lam-btn-icon" data-action="editBehavior" data-tab="stay" data-index="{{@index}}" title="{{localize 'LAM.buttons.edit'}}">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button type="button" class="lam-btn-icon lam-btn-danger" data-action="deleteBehavior" data-tab="stay" data-index="{{@index}}" title="{{localize 'LAM.buttons.delete'}}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          {{/each}}
+        {{else}}
+          <div class="lam-empty-state">
+            <i class="fas fa-layer-group"></i>
+            <p>{{localize "LAM.descriptions.noBehaviorsStay"}}</p>
+          </div>
+        {{/if}}
+      </div>
+
+      <div class="lam-list-actions">
+        <button type="button" class="lam-btn-secondary lam-btn-add-behavior" data-action="addBehavior" data-tab="stay">
+          <i class="fas fa-plus"></i> {{localize "LAM.buttons.addBehavior"}}
+        </button>
+      </div>
+    </div>
+
+    <!-- EXIT TAB -->
+    <div class="tab {{#if (eq activeTab 'exit')}}active{{/if}}" data-tab="exit">
+      <div class="lam-tab-intro">
+        <p><i class="fas fa-power-off"></i> {{localize "LAM.descriptions.exitBehaviors"}}</p>
+      </div>
+
+      <div class="lam-behavior-list" data-event-tab="exit">
+        {{#if behaviorsExit.length}}
+          {{#each behaviorsExit}}
+          <div class="lam-behavior-card {{#unless this.enabled}}lam-disabled{{/unless}}" data-index="{{@index}}">
+            <div class="lam-card-reorder">
+              <button type="button" class="lam-btn-icon lam-btn-move" data-action="moveBehavior" data-tab="exit" data-index="{{@index}}" data-direction="up" title="{{localize 'LAM.buttons.moveUp'}}" {{#if @first}}disabled{{/if}}>
+                <i class="fas fa-chevron-up"></i>
+              </button>
+              <button type="button" class="lam-btn-icon lam-btn-move" data-action="moveBehavior" data-tab="exit" data-index="{{@index}}" data-direction="down" title="{{localize 'LAM.buttons.moveDown'}}" {{#if @last}}disabled{{/if}}>
+                <i class="fas fa-chevron-down"></i>
+              </button>
+            </div>
+            <div class="lam-card-icon">
+              <i class="{{this.icon}}"></i>
+            </div>
+            <div class="lam-card-content">
+              <div class="lam-card-header">
+                <span class="lam-badge lam-badge-{{this.type}}">{{localize this.typeLabel}}</span>
+                {{#unless this.enabled}}<span class="lam-badge-disabled">{{localize "LAM.common.disabled"}}</span>{{/unless}}
+              </div>
+              <div class="lam-card-summary" title="{{this.summary}}">
+                {{this.summary}}
+              </div>
+            </div>
+            <div class="lam-card-actions">
+              <button type="button" class="lam-btn-icon" data-action="editBehavior" data-tab="exit" data-index="{{@index}}" title="{{localize 'LAM.buttons.edit'}}">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button type="button" class="lam-btn-icon lam-btn-danger" data-action="deleteBehavior" data-tab="exit" data-index="{{@index}}" title="{{localize 'LAM.buttons.delete'}}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          {{/each}}
+        {{else}}
+          <div class="lam-empty-state">
+            <i class="fas fa-layer-group"></i>
+            <p>{{localize "LAM.descriptions.noBehaviorsExit"}}</p>
+          </div>
+        {{/if}}
+      </div>
+
+      <div class="lam-list-actions">
+        <button type="button" class="lam-btn-secondary lam-btn-add-behavior" data-action="addBehavior" data-tab="exit">
+          <i class="fas fa-plus"></i> {{localize "LAM.buttons.addBehavior"}}
+        </button>
+      </div>
+    </div>
   </div>
 </div>
