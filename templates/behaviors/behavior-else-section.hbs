@@ -1,0 +1,73 @@
+<div class="lam-else-section">
+  <div class="lam-section-header">
+    <h4><i class="fas fa-code-branch"></i> {{localize "LAM.behaviors.common.onFalse"}}</h4>
+  </div>
+
+  <div class="form-group">
+    <div class="lam-radio-group">
+      <label class="lam-radio-label">
+        <input type="radio" name="onFalse" value="stop" {{#if isElseStop}}checked{{/if}} class="lam-else-mode-toggle"/>
+        <i class="fas fa-stop-circle text-danger"></i> {{localize "LAM.behaviors.common.onFalseStop"}}
+      </label>
+      <label class="lam-radio-label">
+        <input type="radio" name="onFalse" value="execute_else" {{#if isElseExecute}}checked{{/if}} class="lam-else-mode-toggle"/>
+        <i class="fas fa-bolt text-warning"></i> {{localize "LAM.behaviors.common.onFalseElse"}}
+      </label>
+    </div>
+  </div>
+
+  <div class="lam-else-body {{#unless isElseExecute}}lam-hidden{{/unless}}">
+    <div class="lam-else-list">
+      {{#if enrichedElseBehaviors.length}}
+        {{#each enrichedElseBehaviors}}
+        <div class="lam-else-card" data-index="{{@index}}">
+          <div class="lam-card-reorder">
+            <button type="button" class="lam-btn-icon lam-btn-move" data-action="moveElseBehavior" data-index="{{@index}}" data-direction="up" title="{{localize 'LAM.buttons.moveUp'}}" {{#if @first}}disabled{{/if}}>
+              <i class="fas fa-chevron-up"></i>
+            </button>
+            <button type="button" class="lam-btn-icon lam-btn-move" data-action="moveElseBehavior" data-index="{{@index}}" data-direction="down" title="{{localize 'LAM.buttons.moveDown'}}" {{#if @last}}disabled{{/if}}>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="lam-card-icon">
+            <i class="{{this.icon}}"></i>
+          </div>
+          <div class="lam-card-content">
+            <div class="lam-card-header">
+              <span class="lam-badge lam-badge-{{this.type}}">{{localize this.typeLabel}}</span>
+              <span class="lam-badge-else-tag">{{localize "LAM.behaviors.common.elseBranch"}}</span>
+            </div>
+            <div class="lam-card-summary" title="{{this.summary}}">
+              {{this.summary}}
+            </div>
+          </div>
+          <div class="lam-card-actions">
+            <button type="button" class="lam-btn-icon" data-action="editElseBehavior" data-index="{{@index}}" title="{{localize 'LAM.buttons.edit'}}">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button type="button" class="lam-btn-icon lam-btn-danger" data-action="deleteElseBehavior" data-index="{{@index}}" title="{{localize 'LAM.buttons.delete'}}">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        {{/each}}
+      {{else}}
+        <div class="lam-empty-state lam-empty-state-sm">
+          <i class="fas fa-code-fork"></i>
+          <p>{{localize "LAM.behaviors.common.noElseBehaviors"}}</p>
+        </div>
+      {{/if}}
+    </div>
+
+    <div class="lam-else-add-controls">
+      <select class="lam-else-type-select">
+        {{#each elseTypeOptions}}
+        <option value="{{this.type}}">{{localize this.label}}</option>
+        {{/each}}
+      </select>
+      <button type="button" class="lam-btn-secondary lam-btn-sm" data-action="addElseBehavior">
+        <i class="fas fa-plus"></i> {{localize "LAM.behaviors.common.addElseBehavior"}}
+      </button>
+    </div>
+  </div>
+</div>

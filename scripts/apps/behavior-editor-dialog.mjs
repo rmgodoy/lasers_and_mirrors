@@ -1,13 +1,15 @@
 import { MODULE_ID, BEHAVIOR_TYPES } from "../constants.mjs";
 import { BehaviorRegistry } from "../behaviors/behavior-registry.mjs";
-import { ChangeLightPropertyBehavior } from "../behaviors/behavior-light.mjs";
-import { ChangeDoorPropertyBehavior } from "../behaviors/behavior-door.mjs";
-import { ChangeTilePropertyBehavior } from "../behaviors/behavior-tile.mjs";
 import { ConditionalBehavior } from "../behaviors/behavior-conditional.mjs";
 import { CheckTriggersBehavior } from "../behaviors/behavior-check-triggers.mjs";
+import {
+  getPropertyOptions,
+  getDefaultPropertyForType,
+  scrapeCurrentFormValues,
+  extractSubmittedConfig,
+} from "./behavior-editor-helpers.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const FormDataExtended = foundry.applications?.ux?.FormDataExtended ?? globalThis.FormDataExtended;
 
 /**
  * Modal dialog for configuring or creating a Trigger behavior.
@@ -29,7 +31,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     id: "behavior-editor-dialog-{id}",
     tag: "form",
     classes: ["lasers-and-mirrors-sheet", "lam-dialog-window"],
-    position: { width: 500, height: "auto" },
+    position: { width: 520, height: "auto" },
     window: {
       title: "LAM.behaviors.editor.title",
       resizable: true,
@@ -66,6 +68,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       `modules/${MODULE_ID}/templates/behaviors/behavior-trigger-read.hbs`,
       `modules/${MODULE_ID}/templates/behaviors/behavior-conditional.hbs`,
       `modules/${MODULE_ID}/templates/behaviors/behavior-check-triggers.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-else-section.hbs`,
     ];
     const loadTpls = foundry.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;
     if (typeof loadTpls === "function") {
@@ -77,7 +80,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
   /** @override */
   async _prepareContext(options) {
     const type = this.selectedType;
-    const propOptions = this._getPropertyOptions(type);
+    const propOptions = getPropertyOptions(type);
     const properties = Array.isArray(this.config.properties) ? this.config.properties : [];
 
     const enrichedProperties = properties.map(p => ({
@@ -97,6 +100,16 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
         selected: opt.value === (t.state ?? "hit"),
       })),
     }));
+
+    const elseBehaviors = Array.isArray(this.config.elseBehaviors) ? this.config.elseBehaviors : [];
+    const enrichedElseBehaviors = elseBehaviors.map(b => ({
+      ...b,
+      summary: BehaviorRegistry.getSummary(b),
+      icon: BehaviorRegistry.getIcon(b.type),
+      typeLabel: BehaviorRegistry.getLabel(b.type),
+    }));
+
+    const onFalseMode = this.config.onFalse ?? "stop";
 
     return {
       config: this.config,
@@ -130,14 +143,13 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       isCustomMode: matchMode === "custom",
       isSingleTrigger: triggers.length <= 1,
       enrichedTriggers,
+      isElseStop: onFalseMode === "stop",
+      isElseExecute: onFalseMode === "execute_else",
+      enrichedElseBehaviors,
+      elseTypeOptions: BehaviorRegistry.getTypeOptions().filter(
+        opt => opt.type !== BEHAVIOR_TYPES.CONDITIONAL && opt.type !== BEHAVIOR_TYPES.CHECK_TRIGGERS
+      ),
     };
-  }
-
-  _getPropertyOptions(type) {
-    if (type === BEHAVIOR_TYPES.LIGHT) return ChangeLightPropertyBehavior.PROPERTY_OPTIONS;
-    if (type === BEHAVIOR_TYPES.DOOR) return ChangeDoorPropertyBehavior.PROPERTY_OPTIONS;
-    if (type === BEHAVIOR_TYPES.TILE) return ChangeTilePropertyBehavior.PROPERTY_OPTIONS;
-    return [];
   }
 
   /** @override */
@@ -145,8 +157,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     super._onRender(context, options);
 
     // Type switcher dropdown
-    const typeSelect = this.element.querySelector(".lam-behavior-type-select");
-    typeSelect?.addEventListener("change", (e) => {
+    this.element.querySelector(".lam-behavior-type-select")?.addEventListener("change", (e) => {
       const newType = e.target.value;
       if (newType !== this.selectedType) {
         this.selectedType = newType;
@@ -157,13 +168,10 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     });
 
     // Add property button
-    const addPropBtn = this.element.querySelector(".lam-btn-add-prop");
-    addPropBtn?.addEventListener("click", () => {
-      if (!Array.isArray(this.config.properties)) {
-        this.config.properties = [];
-      }
-      this.config.properties.push({ property: this._getDefaultPropertyForType(this.selectedType), value: "" });
-      this._scrapeCurrentFormValues();
+    this.element.querySelector(".lam-btn-add-prop")?.addEventListener("click", () => {
+      if (!Array.isArray(this.config.properties)) this.config.properties = [];
+      this.config.properties.push({ property: getDefaultPropertyForType(this.selectedType), value: "" });
+      scrapeCurrentFormValues(this.element, this.config);
       this.render();
     });
 
@@ -172,7 +180,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       btn.addEventListener("click", (e) => {
         const index = Number(e.currentTarget.dataset.index);
         if (Array.isArray(this.config.properties) && this.config.properties.length > 1) {
-          this._scrapeCurrentFormValues();
+          scrapeCurrentFormValues(this.element, this.config);
           this.config.properties.splice(index, 1);
           this.render();
         }
@@ -180,13 +188,10 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     });
 
     // Add trigger button (for CheckTriggers)
-    const addTriggerBtn = this.element.querySelector(".lam-btn-add-trigger");
-    addTriggerBtn?.addEventListener("click", () => {
-      if (!Array.isArray(this.config.triggers)) {
-        this.config.triggers = [];
-      }
+    this.element.querySelector(".lam-btn-add-trigger")?.addEventListener("click", () => {
+      if (!Array.isArray(this.config.triggers)) this.config.triggers = [];
       this.config.triggers.push({ uuid: "", state: "hit" });
-      this._scrapeCurrentFormValues();
+      scrapeCurrentFormValues(this.element, this.config);
       this.render();
     });
 
@@ -195,7 +200,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       btn.addEventListener("click", (e) => {
         const index = Number(e.currentTarget.dataset.index);
         if (Array.isArray(this.config.triggers) && this.config.triggers.length > 1) {
-          this._scrapeCurrentFormValues();
+          scrapeCurrentFormValues(this.element, this.config);
           this.config.triggers.splice(index, 1);
           this.render();
         }
@@ -203,10 +208,9 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     });
 
     // Match mode switcher (for CheckTriggers)
-    const matchModeSelect = this.element.querySelector(".lam-match-mode-select");
-    matchModeSelect?.addEventListener("change", (e) => {
+    this.element.querySelector(".lam-match-mode-select")?.addEventListener("change", (e) => {
       this.config.matchMode = e.target.value;
-      this._scrapeCurrentFormValues();
+      scrapeCurrentFormValues(this.element, this.config);
       this.render();
     });
 
@@ -227,120 +231,87 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       });
     });
 
+    // Else mode radio buttons (Failure action)
+    this.element.querySelectorAll(".lam-else-mode-toggle").forEach(radio => {
+      radio.addEventListener("change", (e) => {
+        const mode = e.target.value;
+        this.config.onFalse = mode;
+        const elseBody = this.element.querySelector(".lam-else-body");
+        if (mode === "execute_else") {
+          elseBody?.classList.remove("lam-hidden");
+        } else {
+          elseBody?.classList.add("lam-hidden");
+        }
+      });
+    });
+
+    // Add Else Behavior button
+    this.element.querySelector('[data-action="addElseBehavior"]')?.addEventListener("click", () => {
+      const elseType = this.element.querySelector(".lam-else-type-select")?.value || BEHAVIOR_TYPES.LIGHT;
+      scrapeCurrentFormValues(this.element, this.config);
+      new BehaviorEditorDialog({
+        config: BehaviorRegistry.createDefault(elseType),
+        onSave: async (savedBehavior) => {
+          if (!Array.isArray(this.config.elseBehaviors)) this.config.elseBehaviors = [];
+          this.config.elseBehaviors.push(savedBehavior);
+          this.render();
+        },
+      }).render(true);
+    });
+
+    // Edit Else Behavior buttons
+    this.element.querySelectorAll('[data-action="editElseBehavior"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const index = Number(e.currentTarget.dataset.index);
+        const target = this.config.elseBehaviors?.[index];
+        if (target) {
+          scrapeCurrentFormValues(this.element, this.config);
+          new BehaviorEditorDialog({
+            config: target,
+            onSave: async (savedBehavior) => {
+              this.config.elseBehaviors[index] = savedBehavior;
+              this.render();
+            },
+          }).render(true);
+        }
+      });
+    });
+
+    // Delete Else Behavior buttons
+    this.element.querySelectorAll('[data-action="deleteElseBehavior"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const index = Number(e.currentTarget.dataset.index);
+        if (Array.isArray(this.config.elseBehaviors)) {
+          scrapeCurrentFormValues(this.element, this.config);
+          this.config.elseBehaviors.splice(index, 1);
+          this.render();
+        }
+      });
+    });
+
+    // Move Else Behavior buttons
+    this.element.querySelectorAll('[data-action="moveElseBehavior"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const index = Number(e.currentTarget.dataset.index);
+        const direction = e.currentTarget.dataset.direction;
+        const targetIdx = direction === "up" ? index - 1 : index + 1;
+        if (Array.isArray(this.config.elseBehaviors) && targetIdx >= 0 && targetIdx < this.config.elseBehaviors.length) {
+          scrapeCurrentFormValues(this.element, this.config);
+          const temp = this.config.elseBehaviors[index];
+          this.config.elseBehaviors[index] = this.config.elseBehaviors[targetIdx];
+          this.config.elseBehaviors[targetIdx] = temp;
+          this.render();
+        }
+      });
+    });
+
     // Cancel button
-    const cancelBtn = this.element.querySelector('[data-action="cancel"]');
-    cancelBtn?.addEventListener("click", () => this.close());
-  }
-
-  _getDefaultPropertyForType(type) {
-    if (type === BEHAVIOR_TYPES.LIGHT) return "hidden";
-    if (type === BEHAVIOR_TYPES.DOOR) return "ds";
-    if (type === BEHAVIOR_TYPES.TILE) return "hidden";
-    return "";
-  }
-
-  _scrapeCurrentFormValues() {
-    const form = this.element.querySelector("form") || this.element;
-    const data = new FormDataExtended(form).object;
-
-    if ("uuid" in data) this.config.uuid = data.uuid;
-    if ("enabled" in data) this.config.enabled = Boolean(data.enabled);
-    if ("matchMode" in data) this.config.matchMode = data.matchMode;
-    if ("storeVariable" in data) this.config.storeVariable = data.storeVariable;
-
-    if (Array.isArray(this.config.properties)) {
-      for (let i = 0; i < this.config.properties.length; i++) {
-        if (`prop_property_${i}` in data) {
-          this.config.properties[i].property = data[`prop_property_${i}`];
-        }
-        if (`prop_value_${i}` in data) {
-          this.config.properties[i].value = data[`prop_value_${i}`];
-        }
-      }
-    }
-
-    if (Array.isArray(this.config.triggers)) {
-      for (let i = 0; i < this.config.triggers.length; i++) {
-        if (`trigger_uuid_${i}` in data) {
-          this.config.triggers[i].uuid = data[`trigger_uuid_${i}`];
-        }
-        if (`trigger_state_${i}` in data) {
-          this.config.triggers[i].state = data[`trigger_state_${i}`];
-        }
-      }
-    }
+    this.element.querySelector('[data-action="cancel"]')?.addEventListener("click", () => this.close());
   }
 
   static async onSubmit(event, form, formData) {
     const data = formData.object;
-    const type = this.selectedType;
-    const finalConfig = {
-      id: this.config.id,
-      type: type,
-      enabled: Boolean(data.enabled),
-    };
-
-    if (type === BEHAVIOR_TYPES.LIGHT || type === BEHAVIOR_TYPES.DOOR || type === BEHAVIOR_TYPES.TILE) {
-      finalConfig.uuid = (data.uuid ?? "").trim();
-      finalConfig.properties = [];
-      const keys = Object.keys(data);
-      const propIndices = new Set();
-      for (const k of keys) {
-        const match = k.match(/^prop_property_(\d+)$/);
-        if (match) propIndices.add(Number(match[1]));
-      }
-      for (const idx of Array.from(propIndices).sort((a, b) => a - b)) {
-        finalConfig.properties.push({
-          property: data[`prop_property_${idx}`],
-          value: data[`prop_value_${idx}`] ?? "",
-        });
-      }
-      if (finalConfig.properties.length === 0) {
-        finalConfig.properties.push({ property: this._getDefaultPropertyForType(type), value: "" });
-      }
-    } else if (type === BEHAVIOR_TYPES.MACRO) {
-      finalConfig.command = data.command ?? "";
-    } else if (type === BEHAVIOR_TYPES.READ_FLAG) {
-      finalConfig.flagScope = (data.flagScope ?? "world").trim();
-      finalConfig.flagName = (data.flagName ?? "").trim();
-      finalConfig.variableName = (data.variableName ?? "").trim();
-    } else if (type === BEHAVIOR_TYPES.SET_FLAG) {
-      finalConfig.flagScope = (data.flagScope ?? "world").trim();
-      finalConfig.flagName = (data.flagName ?? "").trim();
-      finalConfig.value = data.value ?? "";
-    } else if (type === BEHAVIOR_TYPES.SET_VARIABLE) {
-      finalConfig.name = (data.name ?? "").trim();
-      finalConfig.value = data.value ?? "";
-    } else if (type === BEHAVIOR_TYPES.READ_TRIGGER) {
-      finalConfig.uuid = (data.uuid ?? "").trim();
-      finalConfig.variableName = (data.variableName ?? "").trim();
-    } else if (type === BEHAVIOR_TYPES.CONDITIONAL) {
-      finalConfig.mode = data.mode ?? "clause";
-      finalConfig.left = data.left ?? "";
-      finalConfig.operator = data.operator ?? "==";
-      finalConfig.right = data.right ?? "";
-      finalConfig.expression = data.expression ?? "";
-    } else if (type === BEHAVIOR_TYPES.CHECK_TRIGGERS) {
-      finalConfig.matchMode = data.matchMode ?? "all_hit";
-      finalConfig.storeVariable = (data.storeVariable ?? "").trim();
-      finalConfig.triggers = [];
-      const keys = Object.keys(data);
-      const trigIndices = new Set();
-      for (const k of keys) {
-        const match = k.match(/^trigger_uuid_(\d+)$/);
-        if (match) trigIndices.add(Number(match[1]));
-      }
-      for (const idx of Array.from(trigIndices).sort((a, b) => a - b)) {
-        finalConfig.triggers.push({
-          uuid: (data[`trigger_uuid_${idx}`] ?? "").trim(),
-          state: data[`trigger_state_${idx}`] ?? "hit",
-        });
-      }
-      if (finalConfig.triggers.length === 0) {
-        finalConfig.triggers.push({ uuid: "", state: "hit" });
-      }
-    }
-
+    const finalConfig = extractSubmittedConfig(data, this.selectedType, this.config);
     if (typeof this.onSave === "function") {
       await this.onSave(finalConfig);
     }

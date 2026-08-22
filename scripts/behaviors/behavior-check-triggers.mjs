@@ -1,6 +1,7 @@
 import { BEHAVIOR_TYPES } from "../constants.mjs";
 import { BaseBehavior } from "./base-behavior.mjs";
 import { isTriggerHit } from "../canvas/beam-layer.mjs";
+import { BehaviorRunner } from "./behavior-runner.mjs";
 
 /**
  * Behavior: Check Triggers State
@@ -11,7 +12,7 @@ import { isTriggerHit } from "../canvas/beam-layer.mjs";
  * - Any Hit: At least one trigger in the list must be hit
  * - Custom Sequence: Each trigger in the list must match its specific configured state (hit / unhit)
  *
- * If the condition fails, halts the sequence execution context.
+ * If the condition fails, runs optional else behaviors and halts the sequence execution context.
  * Can also store the boolean result in a local execution variable.
  */
 export class CheckTriggersBehavior extends BaseBehavior {
@@ -43,6 +44,8 @@ export class CheckTriggersBehavior extends BaseBehavior {
         { uuid: "", state: "hit" },
       ],
       storeVariable: "",
+      onFalse: "stop", // "stop" or "execute_else"
+      elseBehaviors: [],
     };
   }
 
@@ -101,6 +104,11 @@ export class CheckTriggersBehavior extends BaseBehavior {
     if (config.storeVariable?.trim()) {
       const varName = config.storeVariable.replace(/^\$/, "").trim();
       summary += ` → $${varName}`;
+    }
+
+    if (config.onFalse === "execute_else" && Array.isArray(config.elseBehaviors) && config.elseBehaviors.length > 0) {
+      const count = config.elseBehaviors.length;
+      summary += ` [Else: ${count} action${count > 1 ? "s" : ""}]`;
     }
 
     return summary;
@@ -173,9 +181,13 @@ export class CheckTriggersBehavior extends BaseBehavior {
       }
     }
 
-    // If condition failed, stop sequence execution
+    // If condition failed, run optional else behaviors and stop sequence execution
     if (!passed) {
+      if (config.onFalse === "execute_else" && Array.isArray(config.elseBehaviors) && config.elseBehaviors.length > 0) {
+        await BehaviorRunner.runSequence(config.elseBehaviors, context);
+      }
       context.stop(`Trigger condition failed: ${this.getSummary(config)}`);
     }
   }
 }
+

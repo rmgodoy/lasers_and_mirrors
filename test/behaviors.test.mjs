@@ -4,6 +4,8 @@ import { BehaviorRegistry } from "../scripts/behaviors/behavior-registry.mjs";
 import { BehaviorRunner, ExecutionContext } from "../scripts/behaviors/behavior-runner.mjs";
 import { BEHAVIOR_TYPES } from "../scripts/constants.mjs";
 import { isTriggerHit } from "../scripts/canvas/beam-layer.mjs";
+import { ConditionalBehavior } from "../scripts/behaviors/behavior-conditional.mjs";
+
 
 console.log("Running behaviors unit tests...");
 
@@ -397,4 +399,122 @@ const dynamicTrigCtx = new ExecutionContext({
 await BehaviorRunner.runSequence(dynamicTrigPipeline, dynamicTrigCtx);
 assert.equal(dynamicTrigCtx.stopped, false, "Dynamic variable trigger reference evaluated accurately");
 
+// 10. Test ConditionalBehavior Else Flow
+// 10a. Conditional Else summary
+assert.equal(
+  ConditionalBehavior.getSummary({
+    left: "$gold",
+    operator: ">=",
+    right: "100",
+    onFalse: "execute_else",
+    elseBehaviors: [{ type: BEHAVIOR_TYPES.SET_VARIABLE }],
+  }),
+  "If: $gold >= 100 [Else: 1 action]"
+);
+
+// 10b. Conditional Else Execution when Condition Fails
+const condElsePipeline = [
+  {
+    type: BEHAVIOR_TYPES.CONDITIONAL,
+    left: "$playerKey",
+    operator: "==",
+    right: "gold_key",
+    onFalse: "execute_else",
+    elseBehaviors: [
+      { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "alarmTriggered", value: true },
+      { type: BEHAVIOR_TYPES.SET_FLAG, flagScope: "world", flagName: "dungeonAlert", value: "high" },
+    ],
+  },
+  { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "chestOpened", value: true },
+];
+
+const condElseCtx = new ExecutionContext({ variables: { playerKey: "wrong_key" } });
+await BehaviorRunner.runSequence(condElsePipeline, condElseCtx);
+assert.equal(condElseCtx.getVariable("alarmTriggered"), true, "Else behavior ran when condition failed");
+assert.equal(sceneFlags["world.dungeonAlert"], "high", "Else SetFlag behavior saved to scene flags");
+assert.equal(condElseCtx.getVariable("chestOpened"), undefined, "Main branch behavior was NOT executed");
+assert.equal(condElseCtx.stopped, true, "Execution stopped after running Else flow");
+
+// 10c. Conditional Else is NOT executed when Condition Passes
+const condPassPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CONDITIONAL,
+    left: "$playerKey",
+    operator: "==",
+    right: "gold_key",
+    onFalse: "execute_else",
+    elseBehaviors: [
+      { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "alarmTriggered", value: true },
+    ],
+  },
+  { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "chestOpened", value: true },
+];
+
+const condPassCtx = new ExecutionContext({ variables: { playerKey: "gold_key" } });
+await BehaviorRunner.runSequence(condPassPipeline, condPassCtx);
+assert.equal(condPassCtx.getVariable("alarmTriggered"), undefined, "Else behavior was NOT run when condition passed");
+assert.equal(condPassCtx.getVariable("chestOpened"), true, "Main branch behavior was executed");
+assert.equal(condPassCtx.stopped, false, "Execution completed successfully");
+
+// 11. Test CheckTriggersBehavior Else Flow
+// 11a. CheckTriggers Else summary
+assert.equal(
+  CheckTriggersBehavior.getSummary({
+    matchMode: "all_hit",
+    triggers: [{ uuid: "triggerA" }],
+    onFalse: "execute_else",
+    elseBehaviors: [{ type: BEHAVIOR_TYPES.SET_VARIABLE }, { type: BEHAVIOR_TYPES.DOOR }],
+  }),
+  "If All Hit: [triggerA] [Else: 2 actions]"
+);
+
+// 11b. CheckTriggers Else Execution on Failure
+const checkTrigElsePipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "all_hit",
+    triggers: [
+      { uuid: "triggerA" }, // hit
+      { uuid: "triggerC" }, // unhit -> fails check
+    ],
+    onFalse: "execute_else",
+    elseBehaviors: [
+      { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "puzzleReset", value: true },
+      { type: BEHAVIOR_TYPES.SET_FLAG, flagScope: "world", flagName: "puzzleState", value: "failed" },
+    ],
+  },
+  { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "puzzleCompleted", value: true },
+];
+
+const checkTrigElseCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(checkTrigElsePipeline, checkTrigElseCtx);
+assert.equal(checkTrigElseCtx.getVariable("puzzleReset"), true, "CheckTriggers Else behavior ran on check failure");
+assert.equal(sceneFlags["world.puzzleState"], "failed", "CheckTriggers Else SetFlag ran");
+assert.equal(checkTrigElseCtx.getVariable("puzzleCompleted"), undefined, "Main branch behavior was NOT run");
+assert.equal(checkTrigElseCtx.stopped, true, "Execution stopped after CheckTriggers Else flow");
+
+// 11c. CheckTriggers Else is NOT executed on Check Pass
+const checkTrigPassPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "all_hit",
+    triggers: [
+      { uuid: "triggerA" }, // hit
+      { uuid: "triggerB" }, // hit -> passes check
+    ],
+    onFalse: "execute_else",
+    elseBehaviors: [
+      { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "puzzleReset", value: true },
+    ],
+  },
+  { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "puzzleCompleted", value: true },
+];
+
+const checkTrigPassCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(checkTrigPassPipeline, checkTrigPassCtx);
+assert.equal(checkTrigPassCtx.getVariable("puzzleReset"), undefined, "CheckTriggers Else behavior was NOT run on pass");
+assert.equal(checkTrigPassCtx.getVariable("puzzleCompleted"), true, "Main branch behavior executed successfully");
+assert.equal(checkTrigPassCtx.stopped, false, "Execution completed successfully");
+
 console.log("All behavior unit tests passed successfully!");
+

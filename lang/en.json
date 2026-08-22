@@ -103,7 +103,18 @@
       "common": {
         "enabled": "Enabled",
         "addProperty": "Add Property",
-        "removeProperty": "Remove Property"
+        "removeProperty": "Remove Property",
+        "onFalse": "Failure Action (Else Flow)",
+        "onFalseStop": "Stop Sequence",
+        "onFalseElse": "Execute Else Actions",
+        "elseHeader": "Else Actions (Executed on Failure)",
+        "addElseBehavior": "Add Else Action",
+        "noElseBehaviors": "No else actions configured. Click '+ Add Else Action' below to add one.",
+        "thenBranch": "THEN",
+        "elseBranch": "ELSE",
+        "thenContinue": "Continue sequence",
+        "elseStop": "Stop sequence",
+        "elseActionsCount": "{count} Else actions"
       },
       "light": {
         "label": "Change Light Property",

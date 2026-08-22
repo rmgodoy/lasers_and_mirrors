@@ -61,12 +61,23 @@ export class TriggerActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) 
 
   _enrichBehaviors(list) {
     if (!Array.isArray(list)) return [];
-    return list.map(b => ({
-      ...b,
-      summary: BehaviorRegistry.getSummary(b),
-      icon: BehaviorRegistry.getIcon(b.type),
-      typeLabel: BehaviorRegistry.getLabel(b.type),
-    }));
+    return list.map(b => {
+      const isBranching = b.type === BEHAVIOR_TYPES.CONDITIONAL || b.type === BEHAVIOR_TYPES.CHECK_TRIGGERS;
+      const elseBehaviors = Array.isArray(b.elseBehaviors) ? b.elseBehaviors : [];
+      const hasElse = b.onFalse === "execute_else" && elseBehaviors.length > 0;
+      const enrichedElseBehaviors = hasElse ? this._enrichBehaviors(elseBehaviors) : [];
+
+      return {
+        ...b,
+        summary: BehaviorRegistry.getSummary(b),
+        icon: BehaviorRegistry.getIcon(b.type),
+        typeLabel: BehaviorRegistry.getLabel(b.type),
+        isBranching,
+        hasElse,
+        isElseStop: (b.onFalse ?? "stop") === "stop",
+        enrichedElseBehaviors,
+      };
+    });
   }
 
   /** @override */

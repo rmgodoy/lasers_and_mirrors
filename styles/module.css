@@ -581,4 +581,169 @@
   margin-top: 4px;
 }
 
+/* ========================================================== */
+/* Branching & Else Flow Styling                              */
+/* ========================================================== */
+.lasers-and-mirrors-sheet .lam-card-branching {
+  border-left: 3px solid #ff8a65;
+  background: rgba(255, 112, 67, 0.04);
+}
+
+.lasers-and-mirrors-sheet .lam-card-branching:hover {
+  background: rgba(255, 112, 67, 0.08);
+  border-color: #ff7043;
+}
+
+.lasers-and-mirrors-sheet .lam-badge-else-count {
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(255, 112, 67, 0.25);
+  color: #ffab91;
+  border: 1px solid rgba(255, 112, 67, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-card-branch-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 5px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  border-left: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.lasers-and-mirrors-sheet .lam-branch-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.lasers-and-mirrors-sheet .lam-branch-tag {
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  min-width: 48px;
+  text-align: center;
+}
+
+.lasers-and-mirrors-sheet .lam-branch-then .lam-branch-tag {
+  background: rgba(0, 229, 255, 0.18);
+  color: #00e5ff;
+}
+
+.lasers-and-mirrors-sheet .lam-branch-else .lam-branch-tag {
+  background: rgba(255, 112, 67, 0.25);
+  color: #ff8a65;
+}
+
+.lasers-and-mirrors-sheet .lam-branch-text {
+  color: #d0d0c0;
+  font-size: 11px;
+}
+
+.lasers-and-mirrors-sheet .lam-text-muted {
+  color: #8a8980;
+  font-style: italic;
+}
+
+.lasers-and-mirrors-sheet .lam-branch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-branch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 112, 67, 0.3);
+  border-radius: 3px;
+  color: #ffe0b2;
+}
+
+.lasers-and-mirrors-sheet .lam-branch-chip i {
+  color: #ffab91;
+}
+
+/* Else Section in Dialog */
+.lasers-and-mirrors-sheet .lam-else-section {
+  background: rgba(255, 112, 67, 0.04);
+  border: 1px solid rgba(255, 112, 67, 0.2);
+  border-left: 3px solid #ff7043;
+  border-radius: 4px;
+  padding: 8px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lasers-and-mirrors-sheet .lam-else-section .lam-section-header h4 {
+  color: #ff8a65;
+}
+
+.lasers-and-mirrors-sheet .lam-else-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lasers-and-mirrors-sheet .lam-else-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-else-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid #ff7043;
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.lasers-and-mirrors-sheet .lam-badge-else-tag {
+  font-size: 9px;
+  padding: 1px 4px;
+  background: rgba(255, 112, 67, 0.3);
+  color: #ffab91;
+  border-radius: 3px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.lasers-and-mirrors-sheet .lam-else-add-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-else-type-select {
+  flex: 1;
+  max-width: 220px;
+}
+
+.lasers-and-mirrors-sheet .lam-empty-state-sm {
+  padding: 10px;
+  font-size: 11px;
+}
+
+
 

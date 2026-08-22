@@ -1,11 +1,12 @@
 import { BEHAVIOR_TYPES } from "../constants.mjs";
 import { BaseBehavior } from "./base-behavior.mjs";
 import { ConditionEvaluator } from "./condition-evaluator.mjs";
+import { BehaviorRunner } from "./behavior-runner.mjs";
 
 /**
  * Behavior: Conditional
  * Evaluates assertions between game flags, variables, and values.
- * If true, continues sequence execution; if false, stops execution flow.
+ * If true, continues sequence execution; if false, runs optional else behaviors and stops execution flow.
  */
 export class ConditionalBehavior extends BaseBehavior {
   static type = BEHAVIOR_TYPES.CONDITIONAL;
@@ -41,19 +42,30 @@ export class ConditionalBehavior extends BaseBehavior {
       operator: "==",
       right: "1",
       expression: "$tempVar == 1",
+      onFalse: "stop", // "stop" or "execute_else"
+      elseBehaviors: [],
     };
   }
 
   /** @override */
   static getSummary(config) {
     if (!config) return "Condition";
+    let summary = "";
     if (config.mode === "expression" && config.expression) {
-      return `If: (${config.expression})`;
+      summary = `If: (${config.expression})`;
+    } else {
+      const left = config.left || "?";
+      const op = config.operator || "==";
+      const right = config.right !== undefined ? config.right : "";
+      summary = `If: ${left} ${op} ${right}`.trim();
     }
-    const left = config.left || "?";
-    const op = config.operator || "==";
-    const right = config.right !== undefined ? config.right : "";
-    return `If: ${left} ${op} ${right}`.trim();
+
+    if (config.onFalse === "execute_else" && Array.isArray(config.elseBehaviors) && config.elseBehaviors.length > 0) {
+      const count = config.elseBehaviors.length;
+      summary += ` [Else: ${count} action${count > 1 ? "s" : ""}]`;
+    }
+
+    return summary;
   }
 
   /** @override */
@@ -72,7 +84,11 @@ export class ConditionalBehavior extends BaseBehavior {
     const passed = ConditionEvaluator.evaluate(target, context);
 
     if (!passed) {
+      if (config.onFalse === "execute_else" && Array.isArray(config.elseBehaviors) && config.elseBehaviors.length > 0) {
+        await BehaviorRunner.runSequence(config.elseBehaviors, context);
+      }
       context.stop(`Condition failed: ${this.getSummary(config)}`);
     }
   }
 }
+
