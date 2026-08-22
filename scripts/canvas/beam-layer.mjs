@@ -4,7 +4,10 @@ import { traceAllBeams } from "../physics/ray-caster.mjs";
 import { laserLightManager } from "./beam-lights.mjs";
 import { BehaviorRunner } from "../behaviors/behavior-runner.mjs";
 
-const CanvasLayer = globalThis.foundry?.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer ?? globalThis.PIXI?.Container ?? class DummyLayer {};
+const CanvasLayer = globalThis.foundry?.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer ?? globalThis.PIXI?.Container ?? class DummyLayer {
+  addChild() {}
+  destroy() {}
+};
 
 /**
  * Custom CanvasLayer that renders all laser beams.
@@ -24,9 +27,15 @@ export class BeamLayer extends CanvasLayer {
   /** @override */
   async _draw(options) {
     if (typeof super._draw === "function") await super._draw(options);
-    this.beamContainer = new PIXI.Container();
-    this.addChild(this.beamContainer);
-    this.renderer = new BeamRenderer(this.beamContainer);
+    if (typeof PIXI !== "undefined" && PIXI.Container) {
+      try {
+        this.beamContainer = new PIXI.Container();
+        this.addChild?.(this.beamContainer);
+        this.renderer = new BeamRenderer(this.beamContainer);
+      } catch (_) {
+        // Mock or non-PIXI testing environment
+      }
+    }
     this.refresh();
   }
 
@@ -55,17 +64,17 @@ export class BeamLayer extends CanvasLayer {
 
   _doRefresh() {
     if (!this.renderer) return;
-    const maxBounces = game.settings?.get(MODULE_ID, "maxBounces") ?? 10;
+    const maxBounces = globalThis.game?.settings?.get?.(MODULE_ID, "maxBounces") ?? 10;
     const beamResults = traceAllBeams(maxBounces);
 
     const beamGroups = beamResults.map(r => r.segments);
-    const opacity = game.settings?.get(MODULE_ID, "beamOpacity") ?? 0.8;
-    const glow = game.settings?.get(MODULE_ID, "glowEffect") ?? true;
+    const opacity = globalThis.game?.settings?.get?.(MODULE_ID, "beamOpacity") ?? 0.8;
+    const glow = globalThis.game?.settings?.get?.(MODULE_ID, "glowEffect") ?? true;
     this.renderer.draw(beamGroups, { opacity, glow });
 
     laserLightManager.updateLights(beamResults);
 
-    if (game.user?.isGM) {
+    if (globalThis.game?.user?.isGM) {
       this._processTriggers(beamResults);
     }
   }
@@ -205,12 +214,16 @@ export let beamLayer = null;
 
 export async function initBeamLayer() {
   if (beamLayer) {
-    beamLayer.destroy({ children: true });
+    beamLayer.destroy?.({ children: true });
   }
   beamLayer = new BeamLayer();
   const parent = canvas.effects ?? canvas.interface;
-  parent.addChild(beamLayer);
-  await beamLayer.draw();
+  parent?.addChild?.(beamLayer);
+  if (typeof beamLayer.draw === "function") {
+    await beamLayer.draw();
+  } else if (typeof beamLayer._draw === "function") {
+    await beamLayer._draw();
+  }
 }
 
 export function refreshBeams() {

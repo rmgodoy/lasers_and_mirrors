@@ -340,6 +340,7 @@
 .lasers-and-mirrors-sheet .lam-badge-setFlag { background: rgba(60, 179, 113, 0.3); color: #3cb371; }
 .lasers-and-mirrors-sheet .lam-badge-setVariable { background: rgba(0, 206, 209, 0.3); color: #00ced1; }
 .lasers-and-mirrors-sheet .lam-badge-conditional { background: rgba(255, 140, 0, 0.3); color: #ffa500; }
+.lasers-and-mirrors-sheet .lam-badge-checkTriggers { background: rgba(0, 229, 255, 0.25); color: #00e5ff; }
 
 .lasers-and-mirrors-sheet .lam-badge-disabled {
   font-size: 9px;
@@ -492,6 +493,25 @@
 
 .lasers-and-mirrors-sheet .lam-prop-value {
   flex: 1.5;
+}
+
+.lasers-and-mirrors-sheet .lam-trigger-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.lasers-and-mirrors-sheet .lam-trigger-uuid-container {
+  flex: 2;
+}
+
+.lasers-and-mirrors-sheet .lam-trigger-state-select {
+  flex: 1.2;
+}
+
+.lasers-and-mirrors-sheet .lam-trigger-state-select.lam-state-auto {
+  opacity: 0.6;
 }
 
 .lasers-and-mirrors-sheet .lam-input-with-prefix {

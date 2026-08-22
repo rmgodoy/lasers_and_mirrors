@@ -8,6 +8,7 @@ import { SetGameFlagBehavior } from "./behavior-set-flag.mjs";
 import { SetVariableBehavior } from "./behavior-set-variable.mjs";
 import { ReadTriggerStateBehavior } from "./behavior-read-trigger.mjs";
 import { ConditionalBehavior } from "./behavior-conditional.mjs";
+import { CheckTriggersBehavior } from "./behavior-check-triggers.mjs";
 
 /**
  * Register all built-in trigger behavior types with the registry.
@@ -22,6 +23,7 @@ export function registerAllBehaviors() {
   BehaviorRegistry.register(SetVariableBehavior);
   BehaviorRegistry.register(ReadTriggerStateBehavior);
   BehaviorRegistry.register(ConditionalBehavior);
+  BehaviorRegistry.register(CheckTriggersBehavior);
 }
 
 // Auto-register built-in behaviors
@@ -38,4 +40,5 @@ export {
   SetVariableBehavior,
   ReadTriggerStateBehavior,
   ConditionalBehavior,
+  CheckTriggersBehavior,
 };

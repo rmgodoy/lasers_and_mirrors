@@ -1,0 +1,56 @@
+<div class="lam-behavior-form">
+  <div class="form-group">
+    <label for="matchMode"><i class="fas fa-filter"></i> {{localize "LAM.behaviors.checkTriggers.matchMode"}}</label>
+    <select name="matchMode" class="lam-match-mode-select">
+      {{#each matchModes}}
+      <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+        {{localize this.label}}
+      </option>
+      {{/each}}
+    </select>
+  </div>
+
+  <div class="lam-properties-section lam-triggers-section">
+    <div class="lam-section-header">
+      <h4><i class="fas fa-bullseye"></i> {{localize "LAM.behaviors.checkTriggers.triggersHeader"}}</h4>
+      <button type="button" class="lam-btn-secondary lam-btn-sm lam-btn-add-trigger" title="{{localize 'LAM.behaviors.checkTriggers.addTrigger'}}">
+        <i class="fas fa-plus"></i> {{localize "LAM.behaviors.checkTriggers.addTrigger"}}
+      </button>
+    </div>
+
+    <div class="lam-triggers-list">
+      {{#each enrichedTriggers}}
+      <div class="lam-trigger-row" data-index="{{@index}}">
+        <div class="lam-input-with-prefix lam-trigger-uuid-container">
+          <span class="lam-prefix"><i class="fas fa-crosshairs"></i></span>
+          <input type="text" name="trigger_uuid_{{@index}}" value="{{this.uuid}}" placeholder="{{localize 'LAM.behaviors.checkTriggers.uuidPlaceholder'}}" class="lam-trigger-uuid" required/>
+        </div>
+
+        <select name="trigger_state_{{@index}}" class="lam-trigger-state-select {{#unless ../isCustomMode}}lam-state-auto{{/unless}}" title="{{#unless ../isCustomMode}}{{localize 'LAM.behaviors.checkTriggers.stateAutoHint'}}{{/unless}}">
+          {{#each this.stateOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+            {{localize this.label}}
+          </option>
+          {{/each}}
+        </select>
+
+        <button type="button" class="lam-btn-icon lam-btn-danger lam-btn-remove-trigger" data-index="{{@index}}" title="{{localize 'LAM.behaviors.checkTriggers.removeTrigger'}}" {{#if ../isSingleTrigger}}disabled{{/if}}>
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="storeVariable"><i class="fas fa-square-root-variable"></i> {{localize "LAM.behaviors.checkTriggers.storeVariable"}}</label>
+    <div class="lam-input-with-prefix">
+      <span class="lam-prefix">$</span>
+      <input type="text" name="storeVariable" value="{{config.storeVariable}}" placeholder="{{localize 'LAM.behaviors.checkTriggers.storeVariablePlaceholder'}}"/>
+    </div>
+  </div>
+
+  <p class="lam-hint">
+    <i class="fas fa-info-circle"></i> {{localize "LAM.behaviors.checkTriggers.hint"}}
+  </p>
+</div>

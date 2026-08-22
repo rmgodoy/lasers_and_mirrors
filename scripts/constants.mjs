@@ -54,6 +54,7 @@ export const BEHAVIOR_TYPES = {
   SET_VARIABLE: "setVariable",
   READ_TRIGGER: "readTrigger",
   CONDITIONAL: "conditional",
+  CHECK_TRIGGERS: "checkTriggers",
 };
 
 export const TRIGGER_EVENTS = {

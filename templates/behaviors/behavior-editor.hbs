@@ -36,6 +36,8 @@
       {{> "modules/LasersAndMirrors/templates/behaviors/behavior-trigger-read.hbs"}}
     {{else if isConditional}}
       {{> "modules/LasersAndMirrors/templates/behaviors/behavior-conditional.hbs"}}
+    {{else if isCheckTriggers}}
+      {{> "modules/LasersAndMirrors/templates/behaviors/behavior-check-triggers.hbs"}}
     {{/if}}
   </div>
 

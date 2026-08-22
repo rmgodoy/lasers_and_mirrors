@@ -4,6 +4,7 @@ import { ChangeLightPropertyBehavior } from "../behaviors/behavior-light.mjs";
 import { ChangeDoorPropertyBehavior } from "../behaviors/behavior-door.mjs";
 import { ChangeTilePropertyBehavior } from "../behaviors/behavior-tile.mjs";
 import { ConditionalBehavior } from "../behaviors/behavior-conditional.mjs";
+import { CheckTriggersBehavior } from "../behaviors/behavior-check-triggers.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const FormDataExtended = foundry.applications?.ux?.FormDataExtended ?? globalThis.FormDataExtended;
@@ -64,6 +65,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       `modules/${MODULE_ID}/templates/behaviors/behavior-set-variable.hbs`,
       `modules/${MODULE_ID}/templates/behaviors/behavior-trigger-read.hbs`,
       `modules/${MODULE_ID}/templates/behaviors/behavior-conditional.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-check-triggers.hbs`,
     ];
     const loadTpls = foundry.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;
     if (typeof loadTpls === "function") {
@@ -86,6 +88,16 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       })),
     }));
 
+    const triggers = Array.isArray(this.config.triggers) ? this.config.triggers : [];
+    const matchMode = this.config.matchMode || "all_hit";
+    const enrichedTriggers = triggers.map(t => ({
+      ...t,
+      stateOptions: CheckTriggersBehavior.TRIGGER_STATES.map(opt => ({
+        ...opt,
+        selected: opt.value === (t.state ?? "hit"),
+      })),
+    }));
+
     return {
       config: this.config,
       selectedType: type,
@@ -102,6 +114,7 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       isSetVariable: type === BEHAVIOR_TYPES.SET_VARIABLE,
       isReadTrigger: type === BEHAVIOR_TYPES.READ_TRIGGER,
       isConditional: type === BEHAVIOR_TYPES.CONDITIONAL,
+      isCheckTriggers: type === BEHAVIOR_TYPES.CHECK_TRIGGERS,
       isClauseMode: this.config.mode !== "expression",
       isExpressionMode: this.config.mode === "expression",
       isSingleProp: properties.length <= 1,
@@ -110,6 +123,13 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
         ...op,
         selected: op.value === this.config.operator,
       })),
+      matchModes: CheckTriggersBehavior.MATCH_MODES.map(opt => ({
+        ...opt,
+        selected: opt.value === matchMode,
+      })),
+      isCustomMode: matchMode === "custom",
+      isSingleTrigger: triggers.length <= 1,
+      enrichedTriggers,
     };
   }
 
@@ -159,6 +179,37 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       });
     });
 
+    // Add trigger button (for CheckTriggers)
+    const addTriggerBtn = this.element.querySelector(".lam-btn-add-trigger");
+    addTriggerBtn?.addEventListener("click", () => {
+      if (!Array.isArray(this.config.triggers)) {
+        this.config.triggers = [];
+      }
+      this.config.triggers.push({ uuid: "", state: "hit" });
+      this._scrapeCurrentFormValues();
+      this.render();
+    });
+
+    // Remove trigger buttons (for CheckTriggers)
+    this.element.querySelectorAll(".lam-btn-remove-trigger").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const index = Number(e.currentTarget.dataset.index);
+        if (Array.isArray(this.config.triggers) && this.config.triggers.length > 1) {
+          this._scrapeCurrentFormValues();
+          this.config.triggers.splice(index, 1);
+          this.render();
+        }
+      });
+    });
+
+    // Match mode switcher (for CheckTriggers)
+    const matchModeSelect = this.element.querySelector(".lam-match-mode-select");
+    matchModeSelect?.addEventListener("change", (e) => {
+      this.config.matchMode = e.target.value;
+      this._scrapeCurrentFormValues();
+      this.render();
+    });
+
     // Conditional mode radio buttons
     this.element.querySelectorAll(".lam-conditional-mode-toggle").forEach(radio => {
       radio.addEventListener("change", (e) => {
@@ -194,6 +245,8 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
 
     if ("uuid" in data) this.config.uuid = data.uuid;
     if ("enabled" in data) this.config.enabled = Boolean(data.enabled);
+    if ("matchMode" in data) this.config.matchMode = data.matchMode;
+    if ("storeVariable" in data) this.config.storeVariable = data.storeVariable;
 
     if (Array.isArray(this.config.properties)) {
       for (let i = 0; i < this.config.properties.length; i++) {
@@ -202,6 +255,17 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
         }
         if (`prop_value_${i}` in data) {
           this.config.properties[i].value = data[`prop_value_${i}`];
+        }
+      }
+    }
+
+    if (Array.isArray(this.config.triggers)) {
+      for (let i = 0; i < this.config.triggers.length; i++) {
+        if (`trigger_uuid_${i}` in data) {
+          this.config.triggers[i].uuid = data[`trigger_uuid_${i}`];
+        }
+        if (`trigger_state_${i}` in data) {
+          this.config.triggers[i].state = data[`trigger_state_${i}`];
         }
       }
     }
@@ -256,6 +320,25 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       finalConfig.operator = data.operator ?? "==";
       finalConfig.right = data.right ?? "";
       finalConfig.expression = data.expression ?? "";
+    } else if (type === BEHAVIOR_TYPES.CHECK_TRIGGERS) {
+      finalConfig.matchMode = data.matchMode ?? "all_hit";
+      finalConfig.storeVariable = (data.storeVariable ?? "").trim();
+      finalConfig.triggers = [];
+      const keys = Object.keys(data);
+      const trigIndices = new Set();
+      for (const k of keys) {
+        const match = k.match(/^trigger_uuid_(\d+)$/);
+        if (match) trigIndices.add(Number(match[1]));
+      }
+      for (const idx of Array.from(trigIndices).sort((a, b) => a - b)) {
+        finalConfig.triggers.push({
+          uuid: (data[`trigger_uuid_${idx}`] ?? "").trim(),
+          state: data[`trigger_state_${idx}`] ?? "hit",
+        });
+      }
+      if (finalConfig.triggers.length === 0) {
+        finalConfig.triggers.push({ uuid: "", state: "hit" });
+      }
     }
 
     if (typeof this.onSave === "function") {

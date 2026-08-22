@@ -32,7 +32,7 @@ globalThis.fromUuid = async (uuid) => {
   return null;
 };
 
-// 1. Verify all 8 behaviors are registered
+// 1. Verify all 9 behaviors are registered
 assert.equal(BehaviorRegistry.has(BEHAVIOR_TYPES.LIGHT), true, "Light behavior registered");
 assert.equal(BehaviorRegistry.has(BEHAVIOR_TYPES.DOOR), true, "Door behavior registered");
 assert.equal(BehaviorRegistry.has(BEHAVIOR_TYPES.TILE), true, "Tile behavior registered");
@@ -41,6 +41,7 @@ assert.equal(BehaviorRegistry.has(BEHAVIOR_TYPES.READ_FLAG), true, "ReadFlag beh
 assert.equal(BehaviorRegistry.has(BEHAVIOR_TYPES.SET_FLAG), true, "SetFlag behavior registered");
 assert.equal(BehaviorRegistry.has(BEHAVIOR_TYPES.SET_VARIABLE), true, "SetVariable behavior registered");
 assert.equal(BehaviorRegistry.has(BEHAVIOR_TYPES.CONDITIONAL), true, "Conditional behavior registered");
+assert.equal(BehaviorRegistry.has(BEHAVIOR_TYPES.CHECK_TRIGGERS), true, "CheckTriggers behavior registered");
 
 // 2. Test ChangeLightPropertyBehavior
 let lightUpdatedData = null;
@@ -191,5 +192,209 @@ await BehaviorRunner.runSequence(haltedPipeline, haltedContext);
 assert.equal(haltedContext.getVariable("stepA"), "ran");
 assert.equal(haltedContext.getVariable("stepB"), undefined, "Step B was stopped");
 assert.equal(haltedContext.stopped, true, "Context stopped flag is true");
+
+// 9. Test CheckTriggersBehavior
+import { initBeamLayer, beamLayer } from "../scripts/canvas/beam-layer.mjs";
+import { CheckTriggersBehavior } from "../scripts/behaviors/behavior-check-triggers.mjs";
+
+globalThis.PIXI = {
+  Container: class {
+    addChild() {}
+    destroy() {}
+  },
+};
+canvas.effects = {
+  addChild: () => {},
+};
+
+await initBeamLayer();
+
+// Simulate trigger hit states
+beamLayer._previouslyHitTriggers.add("triggerA");
+beamLayer._previouslyHitTriggers.add("triggerB");
+// triggerC and triggerD remain unhit
+
+// 9a. Test summaries
+assert.equal(
+  CheckTriggersBehavior.getSummary({ matchMode: "all_hit", triggers: [{ uuid: "triggerA" }, { uuid: "Scene.1.Token.triggerB" }] }),
+  "If All Hit: [triggerA, triggerB]"
+);
+assert.equal(
+  CheckTriggersBehavior.getSummary({ matchMode: "all_not_hit", triggers: [{ uuid: "triggerC" }] }),
+  "If All Unhit: [triggerC]"
+);
+assert.equal(
+  CheckTriggersBehavior.getSummary({ matchMode: "any_hit", triggers: [{ uuid: "triggerA" }] }),
+  "If Any Hit: [triggerA]"
+);
+assert.equal(
+  CheckTriggersBehavior.getSummary({ matchMode: "any_not_hit", triggers: [{ uuid: "triggerC" }] }),
+  "If Any Unhit: [triggerC]"
+);
+assert.equal(
+  CheckTriggersBehavior.getSummary({ matchMode: "custom", triggers: [{ uuid: "triggerA", state: "hit" }, { uuid: "triggerC", state: "not_hit" }], storeVariable: "$passed" }),
+  "If Sequence: [triggerA=Hit, triggerC=Unhit] → $passed"
+);
+
+// 9b. Test "all_hit" mode - Passing
+const allHitPassPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "all_hit",
+    triggers: [
+      { uuid: "Scene.1.Token.triggerA" },
+      { uuid: "triggerB" },
+    ],
+    storeVariable: "allHitResult",
+  },
+  { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "stepAfterCheck", value: "success" },
+];
+const allHitPassCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(allHitPassPipeline, allHitPassCtx);
+assert.equal(allHitPassCtx.getVariable("allHitResult"), true, "all_hit stored true in variable");
+assert.equal(allHitPassCtx.getVariable("stepAfterCheck"), "success", "Step ran after condition passed");
+assert.equal(allHitPassCtx.stopped, false, "Pipeline was not stopped");
+
+// 9c. Test "all_hit" mode - Failing
+const allHitFailPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "all_hit",
+    triggers: [
+      { uuid: "triggerA" },
+      { uuid: "triggerC" }, // triggerC is not hit
+    ],
+    storeVariable: "allHitFailResult",
+  },
+  { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "shouldNotRun", value: "fail" },
+];
+const allHitFailCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(allHitFailPipeline, allHitFailCtx);
+assert.equal(allHitFailCtx.getVariable("allHitFailResult"), false, "all_hit stored false in variable");
+assert.equal(allHitFailCtx.getVariable("shouldNotRun"), undefined, "Subsequent step did not run");
+assert.equal(allHitFailCtx.stopped, true, "Pipeline stopped on condition failure");
+
+// 9d. Test "all_not_hit" mode - Passing
+const allNotHitPassPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "all_not_hit",
+    triggers: [
+      { uuid: "triggerC" },
+      { uuid: "Scene.1.Token.triggerD" },
+    ],
+    storeVariable: "allNotHitResult",
+  },
+];
+const allNotHitPassCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(allNotHitPassPipeline, allNotHitPassCtx);
+assert.equal(allNotHitPassCtx.getVariable("allNotHitResult"), true);
+assert.equal(allNotHitPassCtx.stopped, false);
+
+// 9e. Test "all_not_hit" mode - Failing (triggerA is hit)
+const allNotHitFailPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "all_not_hit",
+    triggers: [
+      { uuid: "triggerA" },
+      { uuid: "triggerC" },
+    ],
+  },
+];
+const allNotHitFailCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(allNotHitFailPipeline, allNotHitFailCtx);
+assert.equal(allNotHitFailCtx.stopped, true, "Halted because triggerA is hit");
+
+// 9f. Test "any_hit" mode
+const anyHitPassPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "any_hit",
+    triggers: [
+      { uuid: "triggerC" }, // unhit
+      { uuid: "triggerA" }, // hit
+    ],
+  },
+];
+const anyHitPassCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(anyHitPassPipeline, anyHitPassCtx);
+assert.equal(anyHitPassCtx.stopped, false, "Passed because triggerA is hit");
+
+const anyHitFailPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "any_hit",
+    triggers: [
+      { uuid: "triggerC" }, // unhit
+      { uuid: "triggerD" }, // unhit
+    ],
+  },
+];
+const anyHitFailCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(anyHitFailPipeline, anyHitFailCtx);
+assert.equal(anyHitFailCtx.stopped, true, "Halted because none of the triggers are hit");
+
+// 9g. Test "any_not_hit" mode
+const anyNotHitPassPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "any_not_hit",
+    triggers: [
+      { uuid: "triggerA" }, // hit
+      { uuid: "triggerC" }, // unhit -> satisfies "at least one is unhit"
+    ],
+  },
+];
+const anyNotHitPassCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(anyNotHitPassPipeline, anyNotHitPassCtx);
+assert.equal(anyNotHitPassCtx.stopped, false, "Passed because triggerC is unhit");
+
+const anyNotHitFailPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "any_not_hit",
+    triggers: [
+      { uuid: "triggerA" }, // hit
+      { uuid: "triggerB" }, // hit -> fails because none is unhit
+    ],
+  },
+];
+const anyNotHitFailCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(anyNotHitFailPipeline, anyNotHitFailCtx);
+assert.equal(anyNotHitFailCtx.stopped, true, "Halted because all triggers are hit (none unhit)");
+
+// 9h. Test "custom" sequence mode
+const customPassPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "custom",
+    triggers: [
+      { uuid: "triggerA", state: "hit" },      // Hit expected -> True
+      { uuid: "triggerB", state: "hit" },      // Hit expected -> True
+      { uuid: "triggerC", state: "not_hit" },  // Unhit expected -> True
+    ],
+  },
+];
+const customPassCtx = new ExecutionContext();
+await BehaviorRunner.runSequence(customPassPipeline, customPassCtx);
+assert.equal(customPassCtx.stopped, false, "Custom sequence passed matching all specified states");
+
+// 9h. Test custom sequence with dynamic variable references
+const dynamicTrigPipeline = [
+  {
+    type: BEHAVIOR_TYPES.CHECK_TRIGGERS,
+    matchMode: "custom",
+    triggers: [
+      { uuid: "$targetTrigVar", state: "hit" },
+      { uuid: "triggerC", state: "not_hit" },
+    ],
+  },
+];
+const dynamicTrigCtx = new ExecutionContext({
+  variables: { targetTrigVar: "Scene.1.Token.triggerA" },
+});
+await BehaviorRunner.runSequence(dynamicTrigPipeline, dynamicTrigCtx);
+assert.equal(dynamicTrigCtx.stopped, false, "Dynamic variable trigger reference evaluated accurately");
 
 console.log("All behavior unit tests passed successfully!");

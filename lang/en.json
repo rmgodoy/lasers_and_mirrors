@@ -191,6 +191,29 @@
         "rightOperand": "Right Operand ($var, flag:name, or value)",
         "expression": "Expression (e.g. ($hp > 0 || $hasKey == true) && flag:open == false)",
         "expressionHint": "Supports AND (&&), OR (||), parentheses ( ), variables ($var), and scene flags (flag:name)."
+      },
+      "checkTriggers": {
+        "label": "Check Triggers State",
+        "matchMode": "Evaluation Mode",
+        "modes": {
+          "allHit": "All triggers must be Hit",
+          "allNotHit": "All triggers must be Unhit (False)",
+          "anyHit": "Any trigger is Hit",
+          "anyNotHit": "Any trigger is Unhit (False)",
+          "custom": "Custom Sequence (Match Each)"
+        },
+        "triggersHeader": "Trigger Tokens",
+        "addTrigger": "Add Trigger",
+        "removeTrigger": "Remove Trigger",
+        "uuidPlaceholder": "Token UUID, ID, or $var",
+        "states": {
+          "hit": "Hit (True)",
+          "notHit": "Unhit (False)"
+        },
+        "stateAutoHint": "In this mode, expected state is determined by the Evaluation Mode above.",
+        "storeVariable": "Store Result In Variable ($name - Optional)",
+        "storeVariablePlaceholder": "e.g. allTriggersHit",
+        "hint": "Checks multiple triggers against laser hit states. If the condition is not met, halts sequence execution."
       }
     },
     "hud": {
