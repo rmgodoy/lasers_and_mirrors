@@ -42,6 +42,9 @@
             </div>
           </div>
           <div class="lam-card-actions">
+            <button type="button" class="lam-btn-icon" data-action="copyElseBehavior" data-index="{{@index}}" title="{{localize 'LAM.buttons.copyElseBehavior'}}">
+              <i class="fas fa-copy"></i>
+            </button>
             <button type="button" class="lam-btn-icon" data-action="editElseBehavior" data-index="{{@index}}" title="{{localize 'LAM.buttons.edit'}}">
               <i class="fas fa-edit"></i>
             </button>
@@ -60,6 +63,9 @@
     </div>
 
     <div class="lam-else-add-controls">
+      <button type="button" class="lam-btn-secondary lam-btn-sm lam-btn-paste-else" data-action="pasteElseBehavior" {{#unless canPasteElse}}disabled{{/unless}} title="{{#if canPasteElse}}{{localize 'LAM.buttons.pasteElseBehavior'}}: {{clipboardSummary}}{{else}}{{localize 'LAM.buttons.pasteElseBehavior'}}{{/if}}">
+        <i class="fas fa-paste"></i> {{localize "LAM.buttons.pasteElseBehavior"}}
+      </button>
       <select class="lam-else-type-select">
         {{#each elseTypeOptions}}
         <option value="{{this.type}}">{{localize this.label}}</option>

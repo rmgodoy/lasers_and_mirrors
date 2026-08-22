@@ -29,8 +29,11 @@ export function registerAllBehaviors() {
 // Auto-register built-in behaviors
 registerAllBehaviors();
 
+import { BehaviorClipboard } from "./behavior-clipboard.mjs";
+
 export {
   BehaviorRegistry,
+  BehaviorClipboard,
   ChangeLightPropertyBehavior,
   ChangeDoorPropertyBehavior,
   ChangeTilePropertyBehavior,

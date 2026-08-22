@@ -1,5 +1,6 @@
 import { MODULE_ID, BEHAVIOR_TYPES } from "../constants.mjs";
 import { BehaviorRegistry } from "../behaviors/behavior-registry.mjs";
+import { BehaviorClipboard } from "../behaviors/behavior-clipboard.mjs";
 import { ConditionalBehavior } from "../behaviors/behavior-conditional.mjs";
 import { CheckTriggersBehavior } from "../behaviors/behavior-check-triggers.mjs";
 import {
@@ -110,6 +111,12 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     }));
 
     const onFalseMode = this.config.onFalse ?? "stop";
+    const clipboardItem = BehaviorClipboard.get();
+    const canPasteElse = Boolean(
+      clipboardItem &&
+      clipboardItem.type !== BEHAVIOR_TYPES.CONDITIONAL &&
+      clipboardItem.type !== BEHAVIOR_TYPES.CHECK_TRIGGERS
+    );
 
     return {
       config: this.config,
@@ -146,6 +153,8 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       isElseStop: onFalseMode === "stop",
       isElseExecute: onFalseMode === "execute_else",
       enrichedElseBehaviors,
+      canPasteElse,
+      clipboardSummary: BehaviorClipboard.hasClipboard ? BehaviorClipboard.getSummary() : "",
       elseTypeOptions: BehaviorRegistry.getTypeOptions().filter(
         opt => opt.type !== BEHAVIOR_TYPES.CONDITIONAL && opt.type !== BEHAVIOR_TYPES.CHECK_TRIGGERS
       ),
@@ -257,6 +266,43 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
           this.render();
         },
       }).render(true);
+    });
+
+    // Copy Else Behavior buttons
+    this.element.querySelectorAll('[data-action="copyElseBehavior"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const index = Number(e.currentTarget.dataset.index);
+        const target = this.config.elseBehaviors?.[index];
+        if (target) {
+          scrapeCurrentFormValues(this.element, this.config);
+          BehaviorClipboard.copy(target);
+          const summary = BehaviorRegistry.getSummary(target) || BehaviorRegistry.getLabel(target.type);
+          ui.notifications?.info?.(game.i18n.format("LAM.notify.behaviorCopied", { name: summary }));
+          this.render();
+        }
+      });
+    });
+
+    // Paste Else Behavior button
+    this.element.querySelector('[data-action="pasteElseBehavior"]')?.addEventListener("click", () => {
+      scrapeCurrentFormValues(this.element, this.config);
+      const clipboardItem = BehaviorClipboard.get();
+      if (!clipboardItem) {
+        ui.notifications?.warn?.(game.i18n.localize("LAM.notify.noBehaviorInClipboard"));
+        return;
+      }
+      if (clipboardItem.type === BEHAVIOR_TYPES.CONDITIONAL || clipboardItem.type === BEHAVIOR_TYPES.CHECK_TRIGGERS) {
+        ui.notifications?.warn?.(game.i18n.localize("LAM.notify.cannotPasteBranchingInElse"));
+        return;
+      }
+      const pasted = BehaviorClipboard.paste();
+      if (!pasted) return;
+
+      if (!Array.isArray(this.config.elseBehaviors)) this.config.elseBehaviors = [];
+      this.config.elseBehaviors.push(pasted);
+      const summary = BehaviorRegistry.getSummary(pasted) || BehaviorRegistry.getLabel(pasted.type);
+      ui.notifications?.info?.(game.i18n.format("LAM.notify.elseBehaviorPasted", { name: summary }));
+      this.render();
     });
 
     // Edit Else Behavior buttons

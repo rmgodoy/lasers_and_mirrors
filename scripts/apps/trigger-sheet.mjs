@@ -2,6 +2,7 @@ import { MODULE_ID, BEHAVIOR_TYPES } from "../constants.mjs";
 import { getTriggerData, updateTriggerData } from "../trigger-data.mjs";
 import { refreshBeams } from "../canvas/beam-layer.mjs";
 import { BehaviorRegistry } from "../behaviors/behavior-registry.mjs";
+import { BehaviorClipboard } from "../behaviors/behavior-clipboard.mjs";
 import { BehaviorEditorDialog } from "./behavior-editor-dialog.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -51,11 +52,19 @@ export class TriggerTokenConfigSheet extends HandlebarsApplicationMixin(Applicat
   /** @override */
   async _prepareContext(options) {
     const data = getTriggerData(this.tokenDoc);
+    const hasClipboard = BehaviorClipboard.hasClipboard;
+    const hasTriggerClipboard = BehaviorClipboard.hasTriggerClipboard;
     return {
       activeTab: this.activeTab ?? "general",
       anchorRadius: data.anchorRadius ?? 0,
       enabled: data.enabled,
       passThrough: data.passThrough,
+      hasClipboard,
+      clipboardSummary: hasClipboard ? BehaviorClipboard.getSummary() : "",
+      clipboardIcon: hasClipboard ? BehaviorClipboard.getIcon() : "",
+      clipboardTypeLabel: hasClipboard ? BehaviorClipboard.getTypeLabel() : "",
+      hasTriggerClipboard,
+      triggerClipboardSummary: hasTriggerClipboard ? BehaviorClipboard.getTriggerSummary() : "",
       behaviorsEnter: this._enrichBehaviors(data.behaviorsEnter),
       behaviorsStay: this._enrichBehaviors(data.behaviorsStay),
       behaviorsExit: this._enrichBehaviors(data.behaviorsExit),
@@ -100,11 +109,44 @@ export class TriggerTokenConfigSheet extends HandlebarsApplicationMixin(Applicat
       });
     });
 
+    // Copy Full Trigger Config
+    this.element.querySelectorAll('[data-action="copyTriggerConfig"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this._onCopyTriggerConfig();
+      });
+    });
+
+    // Paste Full Trigger Config
+    this.element.querySelectorAll('[data-action="pasteTriggerConfig"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this._onPasteTriggerConfig();
+      });
+    });
+
     // Add Behavior
     this.element.querySelectorAll('[data-action="addBehavior"]').forEach(btn => {
       btn.addEventListener("click", (e) => {
         const tab = e.currentTarget.dataset.tab;
         this._onAddBehavior(tab);
+      });
+    });
+
+    // Copy Behavior
+    this.element.querySelectorAll('[data-action="copyBehavior"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const tab = e.currentTarget.dataset.tab;
+        const index = Number(e.currentTarget.dataset.index);
+        this._onCopyBehavior(tab, index);
+      });
+    });
+
+    // Paste Behavior
+    this.element.querySelectorAll('[data-action="pasteBehavior"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const tab = e.currentTarget.dataset.tab;
+        this._onPasteBehavior(tab);
       });
     });
 
@@ -151,6 +193,23 @@ export class TriggerTokenConfigSheet extends HandlebarsApplicationMixin(Applicat
     this.render();
   }
 
+  _onCopyTriggerConfig() {
+    const data = getTriggerData(this.tokenDoc);
+    BehaviorClipboard.copyTrigger(data);
+    ui.notifications?.info?.(game.i18n.localize("LAM.notify.triggerConfigCopied"));
+    this.render();
+  }
+
+  async _onPasteTriggerConfig() {
+    const pasted = BehaviorClipboard.pasteTrigger();
+    if (!pasted) {
+      ui.notifications?.warn?.(game.i18n.localize("LAM.notify.noTriggerInClipboard"));
+      return;
+    }
+    await this._saveChanges(pasted);
+    ui.notifications?.info?.(game.i18n.localize("LAM.notify.triggerConfigPasted"));
+  }
+
   _onAddBehavior(tab) {
     const listKey = this._getBehaviorListKey(tab);
     if (!listKey) return;
@@ -164,6 +223,39 @@ export class TriggerTokenConfigSheet extends HandlebarsApplicationMixin(Applicat
         await this._saveChanges({ [listKey]: currentList });
       },
     }).render(true);
+  }
+
+  _onCopyBehavior(tab, index) {
+    const listKey = this._getBehaviorListKey(tab);
+    if (!listKey) return;
+    const data = getTriggerData(this.tokenDoc);
+    const currentList = Array.isArray(data[listKey]) ? data[listKey] : [];
+    const target = currentList[index];
+    if (!target) return;
+
+    BehaviorClipboard.copy(target);
+    const summary = BehaviorRegistry.getSummary(target) || BehaviorRegistry.getLabel(target.type);
+    ui.notifications?.info?.(game.i18n.format("LAM.notify.behaviorCopied", { name: summary }));
+    this.render();
+  }
+
+  async _onPasteBehavior(tab) {
+    const listKey = this._getBehaviorListKey(tab);
+    if (!listKey) return;
+    const pasted = BehaviorClipboard.paste();
+    if (!pasted) {
+      ui.notifications?.warn?.(game.i18n.localize("LAM.notify.noBehaviorInClipboard"));
+      return;
+    }
+
+    const data = getTriggerData(this.tokenDoc);
+    const currentList = Array.isArray(data[listKey]) ? [...data[listKey]] : [];
+    currentList.push(pasted);
+    await this._saveChanges({ [listKey]: currentList });
+
+    const summary = BehaviorRegistry.getSummary(pasted) || BehaviorRegistry.getLabel(pasted.type);
+    const tabLabel = game.i18n.localize(`LAM.tabs.${tab}`);
+    ui.notifications?.info?.(game.i18n.format("LAM.notify.behaviorPasted", { name: summary, tab: tabLabel }));
   }
 
   _onEditBehavior(tab, index) {

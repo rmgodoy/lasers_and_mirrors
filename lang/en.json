@@ -91,6 +91,12 @@
       "flipLimits": "Flip Allowed Side",
       "flipLimitsHint": "Flip which side of the circular arc is the allowed rotation range",
       "addBehavior": "Add Behavior",
+      "copyBehavior": "Copy Behavior",
+      "pasteBehavior": "Paste Behavior",
+      "copyElseBehavior": "Copy Else Action",
+      "pasteElseBehavior": "Paste Else Action",
+      "copyTriggerConfig": "Copy Trigger",
+      "pasteTriggerConfig": "Paste Trigger",
       "moveUp": "Move Up",
       "moveDown": "Move Down",
       "edit": "Edit",
@@ -253,7 +259,15 @@
       "laserToggled": "Laser state toggled.",
       "mirrorAttached": "Mirror attached to token.",
       "mirrorDetached": "Mirror detached.",
-      "mirrorToggled": "Mirror state toggled."
+      "mirrorToggled": "Mirror state toggled.",
+      "behaviorCopied": "Copied behavior \"{name}\" to clipboard.",
+      "behaviorPasted": "Pasted behavior \"{name}\" into {tab}.",
+      "elseBehaviorPasted": "Pasted behavior \"{name}\" into Else actions.",
+      "cannotPasteBranchingInElse": "Cannot paste a branching condition into an Else block.",
+      "noBehaviorInClipboard": "No behavior in clipboard to paste.",
+      "triggerConfigCopied": "Trigger configuration copied to clipboard.",
+      "triggerConfigPasted": "Trigger configuration pasted successfully.",
+      "noTriggerInClipboard": "No trigger configuration in clipboard to paste."
     },
 
     "controls": {

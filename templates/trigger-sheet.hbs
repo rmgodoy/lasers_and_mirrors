@@ -1,5 +1,15 @@
 <div class="lasers-and-mirrors-sheet lam-trigger-sheet">
-  <h2>{{localize "LAM.sheets.trigger.title"}}</h2>
+  <div class="lam-sheet-header-bar">
+    <h2>{{localize "LAM.sheets.trigger.title"}}</h2>
+    <div class="lam-header-actions">
+      <button type="button" class="lam-btn-secondary lam-btn-sm" data-action="copyTriggerConfig" title="{{localize 'LAM.buttons.copyTriggerConfig'}}">
+        <i class="fas fa-copy"></i> {{localize "LAM.buttons.copyTriggerConfig"}}
+      </button>
+      <button type="button" class="lam-btn-secondary lam-btn-sm" data-action="pasteTriggerConfig" {{#unless hasTriggerClipboard}}disabled{{/unless}} title="{{#if hasTriggerClipboard}}{{localize 'LAM.buttons.pasteTriggerConfig'}}: {{triggerClipboardSummary}}{{else}}{{localize 'LAM.buttons.pasteTriggerConfig'}}{{/if}}">
+        <i class="fas fa-paste"></i> {{localize "LAM.buttons.pasteTriggerConfig"}}
+      </button>
+    </div>
+  </div>
 
   <!-- Tab Navigation -->
   <nav class="sheet-tabs tabs" aria-label="{{localize 'LAM.sheets.trigger.tabs'}}">
@@ -97,6 +107,9 @@
               {{/if}}
             </div>
             <div class="lam-card-actions">
+              <button type="button" class="lam-btn-icon" data-action="copyBehavior" data-tab="enter" data-index="{{@index}}" title="{{localize 'LAM.buttons.copyBehavior'}}">
+                <i class="fas fa-copy"></i>
+              </button>
               <button type="button" class="lam-btn-icon" data-action="editBehavior" data-tab="enter" data-index="{{@index}}" title="{{localize 'LAM.buttons.edit'}}">
                 <i class="fas fa-edit"></i>
               </button>
@@ -115,6 +128,9 @@
       </div>
 
       <div class="lam-list-actions">
+        <button type="button" class="lam-btn-secondary lam-btn-paste-behavior" data-action="pasteBehavior" data-tab="enter" {{#unless hasClipboard}}disabled{{/unless}} title="{{#if hasClipboard}}{{localize 'LAM.buttons.pasteBehavior'}}: {{clipboardSummary}}{{else}}{{localize 'LAM.buttons.pasteBehavior'}}{{/if}}">
+          <i class="fas fa-paste"></i> {{localize "LAM.buttons.pasteBehavior"}}{{#if hasClipboard}} <span class="lam-clipboard-preview"><i class="{{clipboardIcon}}"></i> {{localize clipboardTypeLabel}}</span>{{/if}}
+        </button>
         <button type="button" class="lam-btn-secondary lam-btn-add-behavior" data-action="addBehavior" data-tab="enter">
           <i class="fas fa-plus"></i> {{localize "LAM.buttons.addBehavior"}}
         </button>
@@ -175,6 +191,9 @@
               {{/if}}
             </div>
             <div class="lam-card-actions">
+              <button type="button" class="lam-btn-icon" data-action="copyBehavior" data-tab="stay" data-index="{{@index}}" title="{{localize 'LAM.buttons.copyBehavior'}}">
+                <i class="fas fa-copy"></i>
+              </button>
               <button type="button" class="lam-btn-icon" data-action="editBehavior" data-tab="stay" data-index="{{@index}}" title="{{localize 'LAM.buttons.edit'}}">
                 <i class="fas fa-edit"></i>
               </button>
@@ -193,6 +212,9 @@
       </div>
 
       <div class="lam-list-actions">
+        <button type="button" class="lam-btn-secondary lam-btn-paste-behavior" data-action="pasteBehavior" data-tab="stay" {{#unless hasClipboard}}disabled{{/unless}} title="{{#if hasClipboard}}{{localize 'LAM.buttons.pasteBehavior'}}: {{clipboardSummary}}{{else}}{{localize 'LAM.buttons.pasteBehavior'}}{{/if}}">
+          <i class="fas fa-paste"></i> {{localize "LAM.buttons.pasteBehavior"}}{{#if hasClipboard}} <span class="lam-clipboard-preview"><i class="{{clipboardIcon}}"></i> {{localize clipboardTypeLabel}}</span>{{/if}}
+        </button>
         <button type="button" class="lam-btn-secondary lam-btn-add-behavior" data-action="addBehavior" data-tab="stay">
           <i class="fas fa-plus"></i> {{localize "LAM.buttons.addBehavior"}}
         </button>
@@ -253,6 +275,9 @@
               {{/if}}
             </div>
             <div class="lam-card-actions">
+              <button type="button" class="lam-btn-icon" data-action="copyBehavior" data-tab="exit" data-index="{{@index}}" title="{{localize 'LAM.buttons.copyBehavior'}}">
+                <i class="fas fa-copy"></i>
+              </button>
               <button type="button" class="lam-btn-icon" data-action="editBehavior" data-tab="exit" data-index="{{@index}}" title="{{localize 'LAM.buttons.edit'}}">
                 <i class="fas fa-edit"></i>
               </button>
@@ -271,6 +296,9 @@
       </div>
 
       <div class="lam-list-actions">
+        <button type="button" class="lam-btn-secondary lam-btn-paste-behavior" data-action="pasteBehavior" data-tab="exit" {{#unless hasClipboard}}disabled{{/unless}} title="{{#if hasClipboard}}{{localize 'LAM.buttons.pasteBehavior'}}: {{clipboardSummary}}{{else}}{{localize 'LAM.buttons.pasteBehavior'}}{{/if}}">
+          <i class="fas fa-paste"></i> {{localize "LAM.buttons.pasteBehavior"}}{{#if hasClipboard}} <span class="lam-clipboard-preview"><i class="{{clipboardIcon}}"></i> {{localize clipboardTypeLabel}}</span>{{/if}}
+        </button>
         <button type="button" class="lam-btn-secondary lam-btn-add-behavior" data-action="addBehavior" data-tab="exit">
           <i class="fas fa-plus"></i> {{localize "LAM.buttons.addBehavior"}}
         </button>
@@ -331,6 +359,9 @@
               {{/if}}
             </div>
             <div class="lam-card-actions">
+              <button type="button" class="lam-btn-icon" data-action="copyBehavior" data-tab="hitChange" data-index="{{@index}}" title="{{localize 'LAM.buttons.copyBehavior'}}">
+                <i class="fas fa-copy"></i>
+              </button>
               <button type="button" class="lam-btn-icon" data-action="editBehavior" data-tab="hitChange" data-index="{{@index}}" title="{{localize 'LAM.buttons.edit'}}">
                 <i class="fas fa-edit"></i>
               </button>
@@ -349,6 +380,9 @@
       </div>
 
       <div class="lam-list-actions">
+        <button type="button" class="lam-btn-secondary lam-btn-paste-behavior" data-action="pasteBehavior" data-tab="hitChange" {{#unless hasClipboard}}disabled{{/unless}} title="{{#if hasClipboard}}{{localize 'LAM.buttons.pasteBehavior'}}: {{clipboardSummary}}{{else}}{{localize 'LAM.buttons.pasteBehavior'}}{{/if}}">
+          <i class="fas fa-paste"></i> {{localize "LAM.buttons.pasteBehavior"}}{{#if hasClipboard}} <span class="lam-clipboard-preview"><i class="{{clipboardIcon}}"></i> {{localize clipboardTypeLabel}}</span>{{/if}}
+        </button>
         <button type="button" class="lam-btn-secondary lam-btn-add-behavior" data-action="addBehavior" data-tab="hitChange">
           <i class="fas fa-plus"></i> {{localize "LAM.buttons.addBehavior"}}
         </button>
