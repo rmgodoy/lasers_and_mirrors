@@ -18,7 +18,7 @@ export class TriggerActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) 
 
   static DEFAULT_OPTIONS = {
     classes: ["lasers-and-mirrors-sheet"],
-    position: { width: 520, height: "auto" },
+    position: { width: 800, height: 600 },
     window: {
       resizable: true,
     },
@@ -55,6 +55,7 @@ export class TriggerActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) 
     context.behaviorsEnter = this._enrichBehaviors(data.behaviorsEnter);
     context.behaviorsStay = this._enrichBehaviors(data.behaviorsStay);
     context.behaviorsExit = this._enrichBehaviors(data.behaviorsExit);
+    context.behaviorsHitChange = this._enrichBehaviors(data.behaviorsHitChange);
 
     return context;
   }
@@ -99,7 +100,7 @@ export class TriggerActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) 
     // Add Behavior
     this.element.querySelectorAll('[data-action="addBehavior"]').forEach(btn => {
       btn.addEventListener("click", (e) => {
-        const tab = e.currentTarget.dataset.tab; // "enter", "stay", or "exit"
+        const tab = e.currentTarget.dataset.tab; // "enter", "stay", "exit", or "hitChange"
         this._onAddBehavior(tab);
       });
     });
@@ -137,6 +138,7 @@ export class TriggerActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) 
     if (tab === "enter") return "behaviorsEnter";
     if (tab === "stay") return "behaviorsStay";
     if (tab === "exit") return "behaviorsExit";
+    if (tab === "hitChange" || tab === "hitChanged") return "behaviorsHitChange";
     return null;
   }
 

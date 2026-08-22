@@ -10,10 +10,11 @@ export class ExecutionContext {
    * @param {TokenDocument|Token} params.token
    * @param {Actor} [params.actor]
    * @param {object} [params.beamData]
-   * @param {string} [params.eventType="enter"] - "enter", "stay", or "exit"
+   * @param {string} [params.eventType="enter"] - "enter", "stay", "exit", or "hitChange"
+   * @param {boolean} [params.isHit] - Whether the trigger is currently hit
    * @param {object} [params.variables={}] - Local variables for this flow
    */
-  constructor({ token, actor = null, beamData = null, eventType = "enter", variables = {} } = {}) {
+  constructor({ token, actor = null, beamData = null, eventType = "enter", isHit = undefined, variables = {} } = {}) {
     this.tokenDoc = token?.document ?? token;
     this.actor = actor ?? this.tokenDoc?.actor;
     this.beamData = beamData;
@@ -21,10 +22,14 @@ export class ExecutionContext {
     const tokenId = this.tokenDoc?.id ?? "";
     const tokenUuid = this.tokenDoc?.uuid ?? "";
     const actorId = this.actor?.id ?? "";
+    const hitState = isHit !== undefined ? isHit : (eventType === "exit" ? false : true);
     this.variables = {
       thisTokenId: tokenId,
       thisTokenUuid: tokenUuid,
       thisActorId: actorId,
+      eventType: eventType,
+      isHit: hitState,
+      isTriggerHit: hitState,
       ...variables,
     };
     this.stopped = false;
@@ -83,6 +88,7 @@ export class BehaviorRunner {
           token: contextOrHit.triggerToken ?? contextOrHit.token,
           actor: contextOrHit.triggerToken?.actor ?? contextOrHit.actor,
           beamData: contextOrHit.beamData,
+          isHit: contextOrHit.isHit,
           eventType,
         });
 

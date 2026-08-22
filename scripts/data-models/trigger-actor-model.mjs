@@ -28,9 +28,15 @@ export class TriggerActorModel extends foundry.abstract.TypeDataModel {
         initial: "",
         blank: true,
       }),
+      onBeamHitChange: new fields.StringField({
+        required: false,
+        initial: "",
+        blank: true,
+      }),
       behaviorsEnter: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),
       behaviorsStay: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),
       behaviorsExit: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),
+      behaviorsHitChange: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),
     };
   }
 }

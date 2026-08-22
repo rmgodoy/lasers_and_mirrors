@@ -33,9 +33,11 @@ export const FLAGS = {
   ON_BEAM_HIT: "onBeamHit",
   ON_BEAM_STAY: "onBeamStay",
   ON_BEAM_LOST: "onBeamLost",
+  ON_BEAM_HIT_CHANGE: "onBeamHitChange",
   BEHAVIORS_ENTER: "behaviorsEnter",
   BEHAVIORS_STAY: "behaviorsStay",
   BEHAVIORS_EXIT: "behaviorsExit",
+  BEHAVIORS_HIT_CHANGE: "behaviorsHitChange",
 };
 
 export const TYPES = {
@@ -61,6 +63,7 @@ export const TRIGGER_EVENTS = {
   ENTER: "enter",
   STAY: "stay",
   EXIT: "exit",
+  HIT_CHANGE: "hitChange",
 };
 
 export const LASER_DEFAULTS = {
@@ -112,9 +115,11 @@ export const TRIGGER_DEFAULTS = {
   onBeamHit: "",
   onBeamStay: "",
   onBeamLost: "",
+  onBeamHitChange: "",
   behaviorsEnter: [],
   behaviorsStay: [],
   behaviorsExit: [],
+  behaviorsHitChange: [],
 };
 
 /**

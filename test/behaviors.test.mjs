@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import "../scripts/behaviors/index.mjs";
 import { BehaviorRegistry } from "../scripts/behaviors/behavior-registry.mjs";
 import { BehaviorRunner, ExecutionContext } from "../scripts/behaviors/behavior-runner.mjs";
-import { BEHAVIOR_TYPES } from "../scripts/constants.mjs";
+import { BEHAVIOR_TYPES, TRIGGER_EVENTS, FLAGS, TRIGGER_DEFAULTS } from "../scripts/constants.mjs";
 import { isTriggerHit } from "../scripts/canvas/beam-layer.mjs";
 import { ConditionalBehavior } from "../scripts/behaviors/behavior-conditional.mjs";
 
@@ -515,6 +515,109 @@ await BehaviorRunner.runSequence(checkTrigPassPipeline, checkTrigPassCtx);
 assert.equal(checkTrigPassCtx.getVariable("puzzleReset"), undefined, "CheckTriggers Else behavior was NOT run on pass");
 assert.equal(checkTrigPassCtx.getVariable("puzzleCompleted"), true, "Main branch behavior executed successfully");
 assert.equal(checkTrigPassCtx.stopped, false, "Execution completed successfully");
+
+// 12. Test On Beam Hit Changed (hitChange) Action Type and Lifecycle
+// 12a. Constants and Defaults
+assert.equal(TRIGGER_EVENTS.HIT_CHANGE, "hitChange", "TRIGGER_EVENTS.HIT_CHANGE is defined");
+assert.equal(FLAGS.BEHAVIORS_HIT_CHANGE, "behaviorsHitChange", "FLAGS.BEHAVIORS_HIT_CHANGE is defined");
+assert.equal(FLAGS.ON_BEAM_HIT_CHANGE, "onBeamHitChange", "FLAGS.ON_BEAM_HIT_CHANGE is defined");
+assert.deepEqual(TRIGGER_DEFAULTS.behaviorsHitChange, [], "TRIGGER_DEFAULTS includes behaviorsHitChange array");
+assert.equal(TRIGGER_DEFAULTS.onBeamHitChange, "", "TRIGGER_DEFAULTS includes onBeamHitChange string");
+
+// 12b. ExecutionContext with hitChange event type and isHit
+const enterHitCtx = new ExecutionContext({
+  token: { id: "trigTest1", uuid: "Scene.1.Token.trigTest1" },
+  eventType: TRIGGER_EVENTS.HIT_CHANGE,
+  isHit: true,
+});
+assert.equal(enterHitCtx.eventType, "hitChange");
+assert.equal(enterHitCtx.getVariable("isHit"), true, "isHit variable is true on hit");
+assert.equal(enterHitCtx.getVariable("isTriggerHit"), true, "isTriggerHit variable is true on hit");
+assert.equal(enterHitCtx.getVariable("eventType"), "hitChange");
+
+const exitHitCtx = new ExecutionContext({
+  token: { id: "trigTest1", uuid: "Scene.1.Token.trigTest1" },
+  eventType: TRIGGER_EVENTS.HIT_CHANGE,
+  isHit: false,
+});
+assert.equal(exitHitCtx.eventType, "hitChange");
+assert.equal(exitHitCtx.getVariable("isHit"), false, "isHit variable is false on unhit");
+assert.equal(exitHitCtx.getVariable("isTriggerHit"), false, "isTriggerHit variable is false on unhit");
+
+// 12c. Behavior execution with hitChange event and condition checking $isHit
+const hitChangeBehaviors = [
+  {
+    type: BEHAVIOR_TYPES.CONDITIONAL,
+    mode: "clause",
+    left: "$isHit",
+    operator: "==",
+    right: "true",
+    onFalse: "execute_else",
+    elseBehaviors: [
+      { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "lightStatus", value: "OFF" },
+    ],
+  },
+  { type: BEHAVIOR_TYPES.SET_VARIABLE, name: "lightStatus", value: "ON" },
+];
+
+// Test entering hit state
+const hitPipelineCtx = new ExecutionContext({
+  token: { id: "trigTest1" },
+  eventType: TRIGGER_EVENTS.HIT_CHANGE,
+  isHit: true,
+});
+await BehaviorRunner.runSequence(hitChangeBehaviors, hitPipelineCtx, TRIGGER_EVENTS.HIT_CHANGE);
+assert.equal(hitPipelineCtx.getVariable("lightStatus"), "ON", "Hit changed to true activated ON state");
+
+// Test exiting hit state
+const unhitPipelineCtx = new ExecutionContext({
+  token: { id: "trigTest1" },
+  eventType: TRIGGER_EVENTS.HIT_CHANGE,
+  isHit: false,
+});
+await BehaviorRunner.runSequence(hitChangeBehaviors, unhitPipelineCtx, TRIGGER_EVENTS.HIT_CHANGE);
+assert.equal(unhitPipelineCtx.getVariable("lightStatus"), "OFF", "Hit changed to false activated OFF state in else branch");
+
+// 12d. BeamLayer lifecycle fires hitChange on enter and exit
+const firedEvents = [];
+const testLayer = new (beamLayer.constructor)();
+testLayer._fireTriggerEvent = async (hit, eventType) => {
+  firedEvents.push({
+    id: hit.triggerToken?.id,
+    eventType,
+    isHit: hit.isHit,
+  });
+};
+
+// Beam hits trigger1
+const beamHitResult = [
+  {
+    hitTriggers: [
+      {
+        triggerToken: { id: "dynTrigger1" },
+        triggerData: {
+          behaviorsEnter: [{ type: "test" }],
+          behaviorsHitChange: [{ type: "test" }],
+        },
+        beamData: {},
+      },
+    ],
+  },
+];
+
+testLayer._processTriggers(beamHitResult);
+assert.equal(firedEvents.length, 2, "2 events fired on beam hit (enter + hitChange)");
+assert.equal(firedEvents[0].eventType, "enter");
+assert.equal(firedEvents[1].eventType, "hitChange");
+assert.equal(firedEvents[1].isHit, true);
+
+// Beam is removed (0 hits)
+firedEvents.length = 0;
+testLayer._processTriggers([]);
+assert.equal(firedEvents.length, 2, "2 events fired on beam lost (exit + hitChange)");
+assert.equal(firedEvents[0].eventType, "exit");
+assert.equal(firedEvents[1].eventType, "hitChange");
+assert.equal(firedEvents[1].isHit, false);
 
 console.log("All behavior unit tests passed successfully!");
 

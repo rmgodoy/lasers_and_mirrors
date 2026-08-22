@@ -95,15 +95,16 @@ export class BeamLayer extends CanvasLayer {
     const previousIds = this._previouslyHitTriggers;
     this._previouslyHitTriggers = currentIds;
 
-    // Newly hit triggers → fire Enter behaviors + start stay interval
+    // Newly hit triggers → fire Enter behaviors + Hit Change behaviors + start stay interval
     for (const [id, hit] of currentHits) {
       if (!previousIds.has(id)) {
         this._fireTriggerEvent(hit, "enter");
+        this._fireTriggerEvent({ ...hit, isHit: true }, "hitChange");
         this._startStayInterval(id, hit);
       }
     }
 
-    // Newly lost triggers → clear interval + fire Exit behaviors
+    // Newly lost triggers → clear interval + fire Exit behaviors + Hit Change behaviors
     for (const id of previousIds) {
       if (!currentIds.has(id)) {
         this._stopStayInterval(id);
@@ -129,6 +130,9 @@ export class BeamLayer extends CanvasLayer {
     } else if (eventType === "exit") {
       behaviorList = triggerData.behaviorsExit;
       legacyCode = triggerData.onBeamLost;
+    } else if (eventType === "hitChange" || eventType === "hitChanged") {
+      behaviorList = triggerData.behaviorsHitChange ?? triggerData.behaviorsHitChanged;
+      legacyCode = triggerData.onBeamHitChange ?? triggerData.onBeamHitChanged;
     }
 
     if (Array.isArray(behaviorList) && behaviorList.length > 0) {
@@ -172,7 +176,7 @@ export class BeamLayer extends CanvasLayer {
   }
 
   /**
-   * Stop an onBeamStay interval and fire exit behaviors for a trigger.
+   * Stop an onBeamStay interval and fire exit & hitChange behaviors for a trigger.
    */
   _stopStayInterval(triggerId) {
     const info = this._triggerIntervals.get(triggerId);
@@ -180,11 +184,14 @@ export class BeamLayer extends CanvasLayer {
 
     if (info.intervalId !== null) clearInterval(info.intervalId);
 
-    this._fireTriggerEvent({
+    const hitPayload = {
       triggerToken: info.triggerToken,
       triggerData: info.triggerData,
       beamData: info.beamData,
-    }, "exit");
+    };
+
+    this._fireTriggerEvent(hitPayload, "exit");
+    this._fireTriggerEvent({ ...hitPayload, isHit: false }, "hitChange");
 
     this._triggerIntervals.delete(triggerId);
   }

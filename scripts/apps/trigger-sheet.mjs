@@ -29,7 +29,7 @@ export class TriggerTokenConfigSheet extends HandlebarsApplicationMixin(Applicat
       title: "LAM.sheets.trigger.title",
       resizable: true,
     },
-    position: { width: 520, height: "auto" },
+    position: { width: 800, height: 600 },
     form: {
       handler: TriggerTokenConfigSheet.onSubmit,
       closeOnSubmit: false,
@@ -59,6 +59,7 @@ export class TriggerTokenConfigSheet extends HandlebarsApplicationMixin(Applicat
       behaviorsEnter: this._enrichBehaviors(data.behaviorsEnter),
       behaviorsStay: this._enrichBehaviors(data.behaviorsStay),
       behaviorsExit: this._enrichBehaviors(data.behaviorsExit),
+      behaviorsHitChange: this._enrichBehaviors(data.behaviorsHitChange),
     };
   }
 
@@ -140,6 +141,7 @@ export class TriggerTokenConfigSheet extends HandlebarsApplicationMixin(Applicat
     if (tab === "enter") return "behaviorsEnter";
     if (tab === "stay") return "behaviorsStay";
     if (tab === "exit") return "behaviorsExit";
+    if (tab === "hitChange" || tab === "hitChanged") return "behaviorsHitChange";
     return null;
   }
 

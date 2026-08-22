@@ -63,21 +63,25 @@
       "passThrough": "Beam Passes Through",
       "onBeamHit": "On Beam Hit (Macro)",
       "onBeamStay": "On Beam Stay (Macro, 500ms loop)",
-      "onBeamLost": "On Beam Lost (Macro)"
+      "onBeamLost": "On Beam Lost (Macro)",
+      "onBeamHitChange": "On Beam Hit Changed (Macro)"
     },
     "tabs": {
       "general": "General",
       "enter": "On Beam Enter",
       "stay": "On Beam Stay",
-      "exit": "On Beam Exit"
+      "exit": "On Beam Exit",
+      "hitChange": "On Beam Hit Changed"
     },
     "descriptions": {
       "enterBehaviors": "Sequence of behaviors executed once when a laser beam first hits this trigger.",
       "stayBehaviors": "Sequence of behaviors executed repeatedly every 500ms while a beam stays on this trigger.",
       "exitBehaviors": "Sequence of behaviors executed once when the laser beam leaves this trigger.",
+      "hitChangeBehaviors": "Sequence of behaviors executed whenever this trigger transitions between hit and unhit states.",
       "noBehaviorsEnter": "No behaviors configured for Beam Enter. Click '+ Add Behavior' below to create one.",
       "noBehaviorsStay": "No behaviors configured for Beam Stay. Click '+ Add Behavior' below to create one.",
-      "noBehaviorsExit": "No behaviors configured for Beam Exit. Click '+ Add Behavior' below to create one."
+      "noBehaviorsExit": "No behaviors configured for Beam Exit. Click '+ Add Behavior' below to create one.",
+      "noBehaviorsHitChange": "No behaviors configured for Beam Hit Changed. Click '+ Add Behavior' below to create one."
     },
     "buttons": {
       "setCurrentMin": "Set Current Orientation as Min Angle",

@@ -184,11 +184,24 @@
 /* ========================================================== */
 /* Trigger Sheet & Tabs                                      */
 /* ========================================================== */
+.lasers-and-mirrors-sheet.lam-trigger-sheet {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.lasers-and-mirrors-sheet.lam-trigger-sheet .sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+
 .lasers-and-mirrors-sheet .sheet-tabs {
   display: flex;
   border-bottom: 2px solid rgba(255, 255, 255, 0.15);
   margin-bottom: 8px;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .lasers-and-mirrors-sheet .sheet-tabs .item {
