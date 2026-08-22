@@ -26,6 +26,7 @@ export class MirrorActorModel extends foundry.abstract.TypeDataModel {
         initial: 0,
         step: 0.05,
       }),
+      enabled: new fields.BooleanField({ initial: true }),
       twoSided: new fields.BooleanField({ initial: false }),
       interactable: new fields.BooleanField({ initial: true }),
       interactionRange: new fields.NumberField({

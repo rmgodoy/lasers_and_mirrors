@@ -70,6 +70,7 @@ export const MIRROR_DEFAULTS = {
   width: 1,
   orientation: 0,
   anchorRadius: 0,
+  enabled: true,
   twoSided: false,
   interactable: true,
   interactionRange: 1,

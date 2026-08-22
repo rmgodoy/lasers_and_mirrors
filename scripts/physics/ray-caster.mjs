@@ -297,6 +297,8 @@ function getMirrorIntersections(origin, rayEnd, excludeLaserToken, lastMirrorId)
     if (lastMirrorId && mirrorToken.id === lastMirrorId) continue;
 
     const mirrorData = getMirrorData(mirrorToken.document ?? mirrorToken);
+    if (!mirrorData.enabled) continue;
+
     const center = getTokenCenter(mirrorToken);
     const halfWidth = (mirrorData.width * gridSize) / 2;
     const segment = getLineSegmentFromAngle(center, mirrorData.orientation, halfWidth);

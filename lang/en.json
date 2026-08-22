@@ -76,6 +76,7 @@
     "hud": {
       "adjustMirror": "Rotate Mirror",
       "toggleLaser": "Toggle Laser Beam",
+      "toggleMirror": "Toggle Mirror Active",
       "attachLaser": "Attach Laser to Target",
       "detachLaser": "Detach Laser",
       "pickUpLaser": "Pick Up Laser",
@@ -93,7 +94,8 @@
       "laserDetached": "Laser detached.",
       "laserToggled": "Laser state toggled.",
       "mirrorAttached": "Mirror attached to token.",
-      "mirrorDetached": "Mirror detached."
+      "mirrorDetached": "Mirror detached.",
+      "mirrorToggled": "Mirror state toggled."
     },
 
     "controls": {

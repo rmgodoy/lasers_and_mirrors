@@ -30,6 +30,9 @@ async function onSocketMessage(data) {
     case "toggleLaser":
       await handleToggleLaser(data);
       break;
+    case "toggleMirror":
+      await handleToggleMirror(data);
+      break;
     case "attachLaser":
       await handleAttachLaser(data);
       break;
@@ -90,6 +93,21 @@ async function handleToggleLaser({ sceneId, tokenId, visible }) {
   if (!tokenDoc) return;
 
   await updateLaserData(tokenDoc, { visible });
+  refreshBeams();
+}
+
+/**
+ * Handle a toggleMirror socket request from a player.
+ * @param {object} data - { action, sceneId, tokenId, enabled }
+ */
+async function handleToggleMirror({ sceneId, tokenId, enabled }) {
+  const scene = game.scenes.get(sceneId);
+  if (!scene) return;
+
+  const tokenDoc = scene.tokens.get(tokenId);
+  if (!tokenDoc) return;
+
+  await updateMirrorData(tokenDoc, { enabled });
   refreshBeams();
 }
 
@@ -198,6 +216,21 @@ export function emitToggleLaser(sceneId, tokenId, visible) {
     sceneId,
     tokenId,
     visible,
+  });
+}
+
+/**
+ * Emit a mirror toggle request via websocket.
+ * @param {string} sceneId
+ * @param {string} tokenId
+ * @param {boolean} enabled
+ */
+export function emitToggleMirror(sceneId, tokenId, enabled) {
+  game.socket.emit(SOCKET_NAME, {
+    action: "toggleMirror",
+    sceneId,
+    tokenId,
+    enabled,
   });
 }
 

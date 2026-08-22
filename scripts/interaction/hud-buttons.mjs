@@ -1,6 +1,6 @@
 import { MODULE_ID, TYPES } from "../constants.mjs";
 import { isLaser, getLaserData, updateLaserData } from "../laser-data.mjs";
-import { isMirror, getMirrorData } from "../mirror-data.mjs";
+import { isMirror, getMirrorData, updateMirrorData } from "../mirror-data.mjs";
 import { isTrigger } from "../trigger-data.mjs";
 import { areTokensAdjacent, getPlayerToken } from "../utils/token-helpers.mjs";
 import { LaserTokenConfigSheet } from "../apps/laser-sheet.mjs";
@@ -16,6 +16,7 @@ import {
 } from "./attachment.mjs";
 import {
   emitToggleLaser,
+  emitToggleMirror,
   emitAttachLaser,
   emitDetachLaser,
   emitAttachMirror,
@@ -166,6 +167,39 @@ function onRenderTokenHUD(hud, html, data) {
         }
       );
       col.appendChild(gmBtn);
+    }
+
+    // Toggle Button
+    if (mirrorData.interactable) {
+      const playerToken = getPlayerToken();
+      if (playerToken || game.user.isGM) {
+        const isCurrentlyEnabled = mirrorData.enabled ?? true;
+        const toggleBtn = createHUDButton(
+          "fas fa-power-off",
+          game.i18n.localize("LAM.hud.toggleMirror"),
+          async (ev) => {
+            ev.stopPropagation();
+            const pToken = getPlayerToken();
+            if (!game.user.isGM && (!pToken || !areTokensAdjacent(pToken, token))) {
+              ui.notifications.warn(game.i18n.localize("LAM.notify.notAdjacent"));
+              return;
+            }
+            const nextEnabled = !isCurrentlyEnabled;
+            if (game.user.isGM) {
+              await updateMirrorData(tokenDoc, { enabled: nextEnabled });
+              refreshBeams();
+            } else {
+              emitToggleMirror(tokenDoc.parent.id, tokenDoc.id, nextEnabled);
+            }
+            ui.notifications.info(game.i18n.localize("LAM.notify.mirrorToggled"));
+            hud.render();
+          }
+        );
+        if (isCurrentlyEnabled) {
+          toggleBtn.classList.add("active");
+        }
+        col.appendChild(toggleBtn);
+      }
     }
 
     // Attach / Detach Button
