@@ -2,7 +2,7 @@
   "id": "LasersAndMirrors",
   "title": "Lasers & Mirrors",
   "description": "Puzzle module for laser beams and mirrors",
-  "version": "1.0.5-3",
+  "version": "1.0.6",
   "compatibility": {
     "minimum": "14",
     "verified": "14"
