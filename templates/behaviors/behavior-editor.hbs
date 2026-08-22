@@ -3,7 +3,7 @@
     <label for="type"><i class="fas fa-shapes"></i> {{localize "LAM.behaviors.editor.type"}}</label>
     <select name="type" class="lam-behavior-type-select">
       {{#each typeOptions}}
-      <option value="{{this.type}}" {{#if (eq this.type ../selectedType)}}selected{{/if}}>
+      <option value="{{this.type}}" {{#if this.selected}}selected{{/if}}>
         {{localize this.label}}
       </option>
       {{/each}}

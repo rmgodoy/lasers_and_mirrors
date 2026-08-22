@@ -2,6 +2,7 @@ import { MODULE_ID } from "../constants.mjs";
 import { BeamRenderer } from "./beam-renderer.mjs";
 import { traceAllBeams } from "../physics/ray-caster.mjs";
 import { laserLightManager } from "./beam-lights.mjs";
+import { BehaviorRunner } from "../behaviors/behavior-runner.mjs";
 
 const CanvasLayer = foundry.canvas.layers?.CanvasLayer ?? globalThis.CanvasLayer ?? PIXI.Container;
 
@@ -45,20 +46,15 @@ export class BeamLayer extends CanvasLayer {
 
   /** @override */
   static get layerOptions() {
-    return foundry.utils.mergeObject(super.layerOptions ?? {}, {
-      name: "beams",
-      zIndex: 500
-    });
+    return foundry.utils.mergeObject(super.layerOptions ?? {}, { name: "beams", zIndex: 500 });
   }
 
   /** @override */
   async _draw(options) {
     if (typeof super._draw === "function") await super._draw(options);
-
     this.beamContainer = new PIXI.Container();
     this.addChild(this.beamContainer);
     this.renderer = new BeamRenderer(this.beamContainer);
-
     this.refresh();
   }
 
@@ -68,26 +64,18 @@ export class BeamLayer extends CanvasLayer {
       clearTimeout(this._refreshTimer);
       this._refreshTimer = null;
     }
-    // Clear all trigger stay intervals
     this._clearAllTriggerIntervals();
     this._previouslyHitTriggers.clear();
-
     if (this.beamContainer) {
       this.beamContainer.destroy({ children: true });
       this.beamContainer = null;
     }
-
-    // Clean up laser light sources
     laserLightManager.clearAll();
-
     this.renderer = null;
     if (typeof super._tearDown === "function") await super._tearDown(options);
   }
 
-  /**
-   * Refresh all beam rendering. Debounced to avoid excessive redraws.
-   * Call this whenever tokens move, rotate, or flags change.
-   */
+  /** Refresh all beam rendering (debounced). */
   refresh() {
     if (this._refreshTimer) clearTimeout(this._refreshTimer);
     this._refreshTimer = setTimeout(() => this._doRefresh(), 16);
@@ -118,7 +106,7 @@ export class BeamLayer extends CanvasLayer {
 
   /**
    * Process trigger hit/stay/lost lifecycle.
-   * Compares current hits against previous state to fire appropriate macros.
+   * Compares current hits against previous state to fire behaviors and macros.
    * @param {BeamTraceResult[]} beamResults
    */
   _processTriggers(beamResults) {
@@ -135,18 +123,17 @@ export class BeamLayer extends CanvasLayer {
 
     const currentIds = new Set(currentHits.keys());
 
-    // Newly hit triggers → fire onBeamHit + start onBeamStay interval
+    // Newly hit triggers → fire Enter behaviors + legacy onBeamHit + start stay interval
     for (const [id, hit] of currentHits) {
       if (!this._previouslyHitTriggers.has(id)) {
-        this._executeTriggerMacro(hit.triggerData.onBeamHit, hit);
+        this._fireTriggerEvent(hit, "enter");
         this._startStayInterval(id, hit);
       }
     }
 
-    // Newly lost triggers → clear interval + fire onBeamLost
+    // Newly lost triggers → clear interval + fire Exit behaviors + legacy onBeamLost
     for (const id of this._previouslyHitTriggers) {
       if (!currentIds.has(id)) {
-        // _stopStayInterval fires onBeamLost and clears the interval
         this._stopStayInterval(id);
       }
     }
@@ -155,16 +142,50 @@ export class BeamLayer extends CanvasLayer {
   }
 
   /**
+   * Fire trigger behaviors and legacy macro for a given event.
+   * @param {TriggerHitInfo|object} hit
+   * @param {string} eventType - "enter", "stay", or "exit"
+   */
+  async _fireTriggerEvent(hit, eventType) {
+    const triggerData = hit.triggerData ?? {};
+
+    // 1. Execute modern behavior sequences
+    let behaviorList = [];
+    let legacyCode = "";
+
+    if (eventType === "enter") {
+      behaviorList = triggerData.behaviorsEnter;
+      legacyCode = triggerData.onBeamHit;
+    } else if (eventType === "stay") {
+      behaviorList = triggerData.behaviorsStay;
+      legacyCode = triggerData.onBeamStay;
+    } else if (eventType === "exit") {
+      behaviorList = triggerData.behaviorsExit;
+      legacyCode = triggerData.onBeamLost;
+    }
+
+    if (Array.isArray(behaviorList) && behaviorList.length > 0) {
+      await BehaviorRunner.runSequence(behaviorList, hit, eventType);
+    }
+
+    // 2. Legacy string macro execution for backwards compatibility
+    if (legacyCode && legacyCode.trim() !== "") {
+      this._executeTriggerMacro(legacyCode, hit);
+    }
+  }
+
+  /**
    * Start an onBeamStay interval for a trigger.
    * @param {string} triggerId
    * @param {TriggerHitInfo} hit
    */
   _startStayInterval(triggerId, hit) {
-    if (this._triggerIntervals.has(triggerId)) return; // Already running
+    if (this._triggerIntervals.has(triggerId)) return;
 
-    const stayCode = hit.triggerData.onBeamStay;
-    if (!stayCode || stayCode.trim() === "") {
-      // No stay macro, but still store info for onBeamLost
+    const hasStayBehaviors = Array.isArray(hit.triggerData?.behaviorsStay) && hit.triggerData.behaviorsStay.length > 0;
+    const hasStayMacro = Boolean(hit.triggerData?.onBeamStay && hit.triggerData.onBeamStay.trim() !== "");
+
+    if (!hasStayBehaviors && !hasStayMacro) {
       this._triggerIntervals.set(triggerId, {
         intervalId: null,
         triggerToken: hit.triggerToken,
@@ -175,7 +196,7 @@ export class BeamLayer extends CanvasLayer {
     }
 
     const intervalId = setInterval(() => {
-      this._executeTriggerMacro(stayCode, hit);
+      this._fireTriggerEvent(hit, "stay");
     }, 500);
 
     this._triggerIntervals.set(triggerId, {
@@ -187,7 +208,7 @@ export class BeamLayer extends CanvasLayer {
   }
 
   /**
-   * Stop an onBeamStay interval and fire onBeamLost for a trigger.
+   * Stop an onBeamStay interval and fire exit behaviors for a trigger.
    * @param {string} triggerId
    */
   _stopStayInterval(triggerId) {
@@ -198,15 +219,12 @@ export class BeamLayer extends CanvasLayer {
       clearInterval(info.intervalId);
     }
 
-    // Fire onBeamLost macro
-    const lostCode = info.triggerData.onBeamLost;
-    if (lostCode && lostCode.trim() !== "") {
-      this._executeTriggerMacro(lostCode, {
-        triggerToken: info.triggerToken,
-        triggerData: info.triggerData,
-        beamData: info.beamData,
-      });
-    }
+    // Fire exit behaviors + legacy onBeamLost
+    this._fireTriggerEvent({
+      triggerToken: info.triggerToken,
+      triggerData: info.triggerData,
+      beamData: info.beamData,
+    }, "exit");
 
     this._triggerIntervals.delete(triggerId);
   }
@@ -234,15 +252,17 @@ export class BeamLayer extends CanvasLayer {
     if (!macroCode || macroCode.trim() === "") return;
 
     try {
-      const tokenDoc = hit.triggerToken.document ?? hit.triggerToken;
-      const actor = tokenDoc?.actor ?? hit.triggerToken.actor;
+      const tokenDoc = hit.triggerToken?.document ?? hit.triggerToken;
+      const actor = tokenDoc?.actor ?? hit.triggerToken?.actor;
       const beamData = hit.beamData;
 
       const fn = new Function("token", "actor", "beamData", macroCode);
       fn.call(globalThis, tokenDoc, actor, beamData);
     } catch (err) {
       console.error(`${MODULE_ID} | Error executing trigger macro:`, err);
-      ui.notifications.error(`Trigger macro error: ${err.message}`);
+      if (typeof ui !== "undefined" && ui.notifications?.error) {
+        ui.notifications.error(`Trigger macro error: ${err.message}`);
+      }
     }
   }
 }

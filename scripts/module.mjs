@@ -15,6 +15,7 @@ import { LaserActorSheet } from "./apps/laser-actor-sheet.mjs";
 import { MirrorActorSheet } from "./apps/mirror-actor-sheet.mjs";
 import { TriggerActorSheet } from "./apps/trigger-actor-sheet.mjs";
 import { applyTokenMeshOffset } from "./utils/token-helpers.mjs";
+import "./behaviors/index.mjs";
 
 /**
  * Module initialization — register data models, settings, sheets, and hooks.
@@ -55,6 +56,24 @@ Hooks.once("init", () => {
 
   // Register actor-related hooks (scene controls, actor pre-creation)
   registerActorHooks();
+
+  // Preload behavior Handlebars partial templates
+  const templatePaths = [
+    `modules/${MODULE_ID}/templates/trigger-sheet.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-editor.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-light.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-door.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-tile.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-macro.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-flag-read.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-flag-set.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-set-variable.hbs`,
+    `modules/${MODULE_ID}/templates/behaviors/behavior-conditional.hbs`,
+  ];
+  const loadTpls = foundry.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;
+  if (typeof loadTpls === "function") {
+    loadTpls(templatePaths);
+  }
 });
 
 /**

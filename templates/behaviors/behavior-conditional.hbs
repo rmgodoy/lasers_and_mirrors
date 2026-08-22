@@ -3,17 +3,17 @@
     <label>{{localize "LAM.behaviors.conditional.mode"}}</label>
     <div class="lam-radio-group">
       <label class="lam-radio-label">
-        <input type="radio" name="mode" value="clause" {{#if (eq config.mode "clause")}}checked{{/if}} class="lam-conditional-mode-toggle"/>
+        <input type="radio" name="mode" value="clause" {{#if isClauseMode}}checked{{/if}} class="lam-conditional-mode-toggle"/>
         {{localize "LAM.behaviors.conditional.modeClause"}}
       </label>
       <label class="lam-radio-label">
-        <input type="radio" name="mode" value="expression" {{#if (eq config.mode "expression")}}checked{{/if}} class="lam-conditional-mode-toggle"/>
+        <input type="radio" name="mode" value="expression" {{#if isExpressionMode}}checked{{/if}} class="lam-conditional-mode-toggle"/>
         {{localize "LAM.behaviors.conditional.modeExpression"}}
       </label>
     </div>
   </div>
 
-  <div class="lam-clause-panel {{#if (eq config.mode 'expression')}}lam-hidden{{/if}}">
+  <div class="lam-clause-panel {{#if isExpressionMode}}lam-hidden{{/if}}">
     <div class="form-group">
       <label for="left">{{localize "LAM.behaviors.conditional.leftOperand"}}</label>
       <input type="text" name="left" value="{{config.left}}" placeholder="$varName or flag:name or literal value"/>
@@ -23,7 +23,7 @@
       <label for="operator">{{localize "LAM.behaviors.conditional.operator"}}</label>
       <select name="operator" class="lam-operator-select">
         {{#each operators}}
-        <option value="{{this.value}}" {{#if (eq this.value ../config.operator)}}selected{{/if}}>
+        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
           {{this.label}} ({{this.value}})
         </option>
         {{/each}}
@@ -36,7 +36,7 @@
     </div>
   </div>
 
-  <div class="lam-expression-panel {{#unless (eq config.mode 'expression')}}lam-hidden{{/unless}}">
+  <div class="lam-expression-panel {{#unless isExpressionMode}}lam-hidden{{/unless}}">
     <div class="form-group lam-macro-group">
       <label for="expression">{{localize "LAM.behaviors.conditional.expression"}}</label>
       <textarea name="expression" rows="4" placeholder="e.g. ($hp < 20 || $hasKey == true) && flag:doorClosed == true">{{config.expression}}</textarea>

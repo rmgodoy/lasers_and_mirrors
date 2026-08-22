@@ -6,6 +6,7 @@ import { ChangeTilePropertyBehavior } from "../behaviors/behavior-tile.mjs";
 import { ConditionalBehavior } from "../behaviors/behavior-conditional.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const FormDataExtended = foundry.applications?.ux?.FormDataExtended ?? globalThis.FormDataExtended;
 
 /**
  * Modal dialog for configuring or creating a Trigger behavior.
@@ -51,12 +52,46 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
   }
 
   /** @override */
+  async _renderHTML(context, options) {
+    const templatePaths = [
+      `modules/${MODULE_ID}/templates/behaviors/behavior-editor.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-light.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-door.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-tile.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-macro.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-flag-read.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-flag-set.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-set-variable.hbs`,
+      `modules/${MODULE_ID}/templates/behaviors/behavior-conditional.hbs`,
+    ];
+    const loadTpls = foundry.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;
+    if (typeof loadTpls === "function") {
+      await loadTpls(templatePaths);
+    }
+    return super._renderHTML(context, options);
+  }
+
+  /** @override */
   async _prepareContext(options) {
     const type = this.selectedType;
+    const propOptions = this._getPropertyOptions(type);
+    const properties = Array.isArray(this.config.properties) ? this.config.properties : [];
+
+    const enrichedProperties = properties.map(p => ({
+      ...p,
+      options: propOptions.map(opt => ({
+        ...opt,
+        selected: opt.value === p.property,
+      })),
+    }));
+
     return {
       config: this.config,
       selectedType: type,
-      typeOptions: BehaviorRegistry.getTypeOptions(),
+      typeOptions: BehaviorRegistry.getTypeOptions().map(opt => ({
+        ...opt,
+        selected: opt.type === type,
+      })),
       isLight: type === BEHAVIOR_TYPES.LIGHT,
       isDoor: type === BEHAVIOR_TYPES.DOOR,
       isTile: type === BEHAVIOR_TYPES.TILE,
@@ -65,8 +100,14 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
       isSetFlag: type === BEHAVIOR_TYPES.SET_FLAG,
       isSetVariable: type === BEHAVIOR_TYPES.SET_VARIABLE,
       isConditional: type === BEHAVIOR_TYPES.CONDITIONAL,
-      propertyOptions: this._getPropertyOptions(type),
-      operators: ConditionalBehavior.OPERATORS,
+      isClauseMode: this.config.mode !== "expression",
+      isExpressionMode: this.config.mode === "expression",
+      isSingleProp: properties.length <= 1,
+      enrichedProperties,
+      operators: ConditionalBehavior.OPERATORS.map(op => ({
+        ...op,
+        selected: op.value === this.config.operator,
+      })),
     };
   }
 
@@ -145,9 +186,6 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     return "";
   }
 
-  /**
-   * Scrapes currently entered input values from the DOM to avoid losing user inputs on re-render.
-   */
   _scrapeCurrentFormValues() {
     const form = this.element.querySelector("form") || this.element;
     const data = new FormDataExtended(form).object;
@@ -155,7 +193,6 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     if ("uuid" in data) this.config.uuid = data.uuid;
     if ("enabled" in data) this.config.enabled = Boolean(data.enabled);
 
-    // Scrape properties list for multi-property behaviors
     if (Array.isArray(this.config.properties)) {
       for (let i = 0; i < this.config.properties.length; i++) {
         if (`prop_property_${i}` in data) {
@@ -168,9 +205,6 @@ export class BehaviorEditorDialog extends HandlebarsApplicationMixin(Application
     }
   }
 
-  /**
-   * Form submit handler.
-   */
   static async onSubmit(event, form, formData) {
     const data = formData.object;
     const type = this.selectedType;
